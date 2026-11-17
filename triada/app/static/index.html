@@ -178,7 +178,7 @@ const TIPO_FIX = {titulo: "Título", meta_description: "Meta descripción", h1: 
 const SEVS = ["critica", "alta", "media", "baja"];
 const REVISAR = "«REVISAR»";
 
-const S = {lista: [], actual: null, info: {}, sev: "todas", ediciones: {}, sel: {}, destino: "carpeta",
+const S = {lista: [], actual: null, info: {}, sev: "todas", ediciones: {}, sel: {seo: {}, sem: {}, geo: {}}, destino: "carpeta",
            carpeta: "", ultimoResultado: null, trabajo: null, demo: null, ext: null, ajustes: null,
            accRama: "todas", accEstado: "abiertas", monitorT: null};
 
@@ -217,6 +217,8 @@ function aplicadasSubidas() { return new Set((S.subidas && S.subidas.aplicados) 
 function aplicadas(a) { return new Set([...aplicadasCarpeta(a), ...aplicadasSubidas()]); }
 function aplicadasDestino(a) { return S.destino === "subidos" ? aplicadasSubidas() : aplicadasCarpeta(a); }
 function valorFix(f) { return S.ediciones[f.id] ?? f.valor_propuesto; }
+// la selección va por vertiente: marcar en SEO no marca nada en SEM ni en GEO
+function selVacia() { return {seo: {}, sem: {}, geo: {}}; }
 function fixLista(f) { return !valorFix(f).includes(REVISAR) && valorFix(f).trim() !== ""; }
 function tipoFix(t) { return t.startsWith("alt:") ? "Texto alternativo (alt)" : (TIPO_FIX[t] || t); }
 
@@ -225,7 +227,7 @@ async function cargarLista() { S.lista = await api("/api/analisis"); }
 async function abrir(id) {
   if (!id) { S.actual = null; return; }
   const nuevo = !S.actual || S.actual.id !== id;
-  if (S.actual && S.actual.id !== id) { S.ediciones = {}; S.sel = {}; S.ultimoResultado = null; }
+  if (S.actual && S.actual.id !== id) { S.ediciones = {}; S.sel = selVacia(); S.ultimoResultado = null; }
   S.actual = await api("/api/analisis/" + id);
   S.subidas = await api("/api/subidas/" + id);
   if (nuevo) S.destino = S.actual.carpeta_sitio ? "carpeta" : "subidos";
@@ -440,7 +442,8 @@ function vistaSolucionar(r) {
   const fx = a.fixes.filter(f => f.ramas.includes(r));
   const listas = fx.filter(f => fixLista(f) && !ap.has(f.id));
   const datos = fx.filter(f => !fixLista(f) && !ap.has(f.id));
-  const nsel = fx.filter(f => S.sel[f.id]).length;
+  const sel = S.sel[r], nsel = fx.filter(f => sel[f.id]).length;
+  const todas = listas.length > 0 && listas.every(f => sel[f.id]);
   let html = `<div class="destino d3">
     <label class="opc ${S.destino === "subidos" ? "on" : ""}"><input type="radio" name="dest" ${S.destino === "subidos" ? "checked" : ""} onchange="S.destino='subidos';render()">
       <div><b>Subir archivos HTML</b><small>Sube las páginas (.html o un .zip de la web), Tríada las corrige y te devuelve el HTML modificado. Tus originales no se tocan.</small></div></label>
@@ -454,10 +457,10 @@ function vistaSolucionar(r) {
   ${panelExportar(r)}
   <div class="barra">
     <button class="btn ${r}" onclick="solucionar('${r}', true)" ${listas.length ? "" : "disabled"}>⚡ Solucionar automáticamente (${listas.length})</button>
+    <button class="btn" id="sel-todas-${r}" onclick="selTodas('${r}', ${!todas})" ${listas.length ? "" : "disabled"}
+      title="Marca todas las correcciones de ${r.toUpperCase()} que se pueden aplicar. Las que tienen «REVISAR» no se marcan hasta que completes el dato.">${todas ? "☐ Quitar selección" : `☑ Seleccionar todas (${listas.length})`}</button>
     <button class="btn" onclick="solucionar('${r}', false)" ${nsel ? "" : "disabled"}>Aplicar seleccionadas (${nsel})</button>
     <span class="sub">${listas.length} listas · ${datos.length} necesitan datos · ${fx.filter(f => ap.has(f.id)).length} aplicadas</span>
-    <span style="flex:1"></span>
-    <button class="btn link" onclick="selTodas('${r}', true)">Seleccionar listas</button><button class="btn link" onclick="selTodas('${r}', false)">Quitar selección</button>
   </div>`;
   const res = S.ultimoResultado;
   if (res && res.rama === r) {
@@ -473,11 +476,12 @@ function vistaSolucionar(r) {
   fx.forEach(f => (grupos[f.codigo_issue] = grupos[f.codigo_issue] || []).push(f));
   for (const [cod, lista] of Object.entries(grupos)) {
     const iss = a.issues.find(i => i.codigo === cod);
-    html += `<div class="card grupo"><header>${iss ? `<span class="sev s-${iss.severidad}">${iss.severidad}</span><b>${esc(iss.mensaje)}</b>` : `<b>${esc(cod)}</b>`}<span class="sub" style="margin-left:auto">${lista.length}</span></header>`;
+    const gListas = lista.filter(f => fixLista(f) && !ap.has(f.id)), gTodas = gListas.length > 0 && gListas.every(f => sel[f.id]);
+    html += `<div class="card grupo"><header><input type="checkbox" title="Seleccionar todas las de este grupo" ${gTodas ? "checked" : ""} ${gListas.length ? "" : "disabled"} onchange="selGrupo('${r}', '${esc(cod)}', this.checked)">${iss ? `<span class="sev s-${iss.severidad}">${iss.severidad}</span><b>${esc(iss.mensaje)}</b>` : `<b>${esc(cod)}</b>`}<span class="sub" style="margin-left:auto">${lista.length}</span></header>`;
     for (const f of lista) {
       const hecha = ap.has(f.id), ok = fixLista(f);
       const code = f.valor_propuesto.length > 160 || f.valor_propuesto.includes("\n");
-      html += `<div class="fix ${hecha ? "aplicada" : ""}"><input type="checkbox" ${S.sel[f.id] ? "checked" : ""} ${hecha ? "disabled" : ""} onchange="S.sel['${f.id}']=this.checked;render()">
+      html += `<div class="fix ${hecha ? "aplicada" : ""}"><input type="checkbox" ${sel[f.id] ? "checked" : ""} ${hecha ? "disabled" : ""} onchange="S.sel['${r}']['${f.id}']=this.checked;render()">
         <div><div class="meta"><b>${esc(tipoFix(f.tipo))}</b><span class="url">${esc(ruta(f.url))}</span>
           ${hecha ? `<span class="est hecha">Aplicada</span>` : ok ? `<span class="est lista">Lista</span>` : `<span class="est datos">Completa los «REVISAR»</span>`}<span class="sub">${f.id}</span></div>
         ${f.valor_actual && !code ? `<div class="actual">Actual: ${esc(f.valor_actual)}</div>` : ""}
@@ -496,12 +500,17 @@ function vistaSolucionar(r) {
 }
 function selTodas(r, on) {
   const ap = aplicadasDestino(S.actual);
-  S.actual.fixes.filter(f => f.ramas.includes(r)).forEach(f => S.sel[f.id] = on && fixLista(f) && !ap.has(f.id));
+  S.actual.fixes.filter(f => f.ramas.includes(r)).forEach(f => S.sel[r][f.id] = on && fixLista(f) && !ap.has(f.id));
+  render();
+}
+function selGrupo(r, cod, on) {
+  const ap = aplicadasDestino(S.actual);
+  S.actual.fixes.filter(f => f.ramas.includes(r) && f.codigo_issue === cod).forEach(f => S.sel[r][f.id] = on && fixLista(f) && !ap.has(f.id));
   render();
 }
 async function solucionar(r, auto) {
   const a = S.actual, ap = aplicadasDestino(a);
-  const ids = a.fixes.filter(f => f.ramas.includes(r) && !ap.has(f.id) && (auto ? fixLista(f) : S.sel[f.id])).map(f => f.id);
+  const ids = a.fixes.filter(f => f.ramas.includes(r) && !ap.has(f.id) && (auto ? fixLista(f) : S.sel[r][f.id])).map(f => f.id);
   if (!ids.length) return toast("No hay correcciones que aplicar", true);
   if (S.destino === "subidos" && !(S.subidas && S.subidas.archivos.length)) return toast("Primero sube los archivos HTML de tu web", true);
   if (S.destino === "carpeta" && !S.carpeta.trim()) return toast("Indica la carpeta de tu web, o elige otra opción", true);
@@ -514,7 +523,7 @@ async function solucionar(r, auto) {
     S.ultimoResultado = {...res, rama: r, destino: S.destino, aplicados: res.aplicados || [], omitidos: res.omitidos || []};
     if (res.descarga) { location.href = res.descarga; toast("Paquete descargado"); }
     else toast(`${res.aplicados.length} cambios aplicados`);
-    S.sel = {};
+    S.sel[r] = {};
     await abrir(a.id); render();
   } catch (e) { toast(e.message, true); }
 }
@@ -644,7 +653,7 @@ async function lanzar(cfg) {
       S.trabajo = t; if (location.hash === "#/analizar") render();
       if (t.estado === "error") { S.trabajo = null; render(); return toast(t.error, true); }
       if (t.estado === "terminado") {
-        S.trabajo = null; S.form = null; S.ultimoResultado = null; S.ediciones = {}; S.sel = {};
+        S.trabajo = null; S.form = null; S.ultimoResultado = null; S.ediciones = {}; S.sel = selVacia();
         await cargarLista(); await abrir(t.analisis);
         toast("Análisis terminado"); location.hash = "#/panel"; render(); return;
       }
