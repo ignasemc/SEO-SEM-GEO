@@ -1,7 +1,7 @@
 # Tríada · contexto del proyecto para Claude Code
 
 Aplicación local que audita y optimiza la web de una empresa en tres vertientes: **SEO**, **SEM** y **GEO**
-(visibilidad en buscadores con IA). Versión actual: **0.4.0**. Todo el producto (interfaz, código, comentarios
+(visibilidad en buscadores con IA). Versión actual: **0.5.0**. Todo el producto (interfaz, código, comentarios
 e identificadores) está **en español**: mantén ese idioma.
 
 Documentación de traspaso (léela al empezar a trabajar en el proyecto):
@@ -15,7 +15,8 @@ python -m venv .venv && source .venv/bin/activate      # Python ≥ 3.11 (usa to
 pip install -e ".[dev]"
 triada app                     # abre la app en http://127.0.0.1:8765 (o python -m triada.app)
 triada auditar https://web.com --combinado --config triada.toml   # modo línea de comandos
-pytest                         # 22 tests; levantan servidores locales, no necesitan internet
+pytest                         # 27 tests; levantan servidores locales, no necesitan internet
+triada conectar-claude         # registra el conector MCP en Claude Desktop (requiere pip install -e ".[claude]")
 python tests/e2e_interfaz.py   # prueba de la interfaz con Playwright (opcional: pip install playwright && playwright install chromium)
 ```
 
@@ -40,6 +41,10 @@ triada/
     capas.py                         nota por capas: en la web / señales externas / resultado real + cobertura
     acciones.py                      plan de acciones con estados y verificación automática
     almacen.py, servicio.py          persistencia por proyecto y ajustes (claves de API en local)
+  conector_claude.py               Conector para Claude (servidor MCP local, paquete opcional «mcp» 2.x): herramientas
+                                   analizar_web, ver_problemas, ver_correcciones, editar_correccion, aplicar_correcciones,
+                                   exportar_informe… La lógica no depende de mcp; las ediciones se guardan en ediciones.json
+  instalar_claude.py               `triada conectar-claude`: añade la entrada a claude_desktop_config.json (con copia)
   app/
     server.py                      Servidor stdlib (http.server) solo en 127.0.0.1, API JSON
     servicio.py                    Ejecutar/guardar/listar análisis
@@ -68,7 +73,8 @@ tests/                             pytest (+ servidor.py para la web de prueba)
 ## Convenciones
 
 - Español en todo: textos, identificadores, mensajes de error. Decimales con coma en la interfaz (`pc()`, `_p()`, `_d()`).
-- Sin dependencias nuevas salvo necesidad clara (hoy: httpx, beautifulsoup4, lxml, jinja2).
+- Sin dependencias nuevas salvo necesidad clara (hoy: httpx, beautifulsoup4, lxml, jinja2; opcional `mcp` para Claude).
+- El rastreo se limita al dominio indicado (con o sin www): `urls.mismo_sitio`. Nunca analizar otras webs.
 - Las acciones POST/DELETE de la API exigen la cabecera `X-Triada: 1` (protección CSRF frente a otras webs).
 - Rutas de archivos de usuario siempre validadas (sin `..`); ver `subidas._nombre_seguro` y `aplicar.ruta_archivo`.
 - Clientes de API externos: aceptar `httpx.Client` inyectable y probarlos con `httpx.MockTransport`.
@@ -76,6 +82,8 @@ tests/                             pytest (+ servidor.py para la web de prueba)
 
 ## Pendiente / próximos pasos
 
+0. **Conector con Claude (0.5)**: probado con una conversación MCP real por stdio en los tests; falta probarlo en
+   Claude Desktop en Windows/Mac del usuario. Las herramientas de «fuera de la web» aún no están en el conector.
 1. **Conector con el CMS** del usuario (aplicar cambios directamente): falta saber si su web es WordPress, Shopify,
    Webflow o código propio.
 2. **Google Ads API** en lugar de importar CSV. Desde el 9-sep-2026 ya no hay developer token: el acceso va por

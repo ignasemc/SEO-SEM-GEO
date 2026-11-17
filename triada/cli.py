@@ -69,10 +69,19 @@ def main(argv: list[str] | None = None) -> int:
     ap_app = sub.add_parser("app", help="Abre la aplicación con panel en el navegador")
     ap_app.add_argument("--puerto", type=int, default=8765)
     ap_app.add_argument("--sin-navegador", action="store_true")
+    sub.add_parser("conectar-claude", help="Añade Tríada como conector de Claude Desktop")
+    sub.add_parser("claude", help="Arranca el conector para Claude (lo lanza Claude, no hace falta a mano)")
 
     args = ap.parse_args(argv)
     if args.cmd == "config-ejemplo":
         print(CONFIG_EJEMPLO)
+        return 0
+    if args.cmd == "conectar-claude":
+        from .instalar_claude import main as conectar
+        return conectar()
+    if args.cmd == "claude":
+        from .conector_claude import main as conector
+        conector()
         return 0
     if args.cmd == "app":
         from .app.server import iniciar

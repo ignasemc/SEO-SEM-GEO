@@ -64,6 +64,25 @@ La demostración usa datos de ejemplo y respuestas simuladas (marcadas como tale
 > Aplicar en carpeta funciona con webs estáticas o copias locales. Para WordPress, Shopify, etc. usa el
 > paquete de cambios (incluye instrucciones); los conectores directos llegarán en la siguiente fase.
 
+## Usar Tríada desde Claude
+
+Tríada se puede conectar a **Claude Desktop** (o Claude Code) como conector local. Así le pides a Claude en el chat
+*«Analiza https://www.miempresa.com con Tríada y corrige el SEO»* y Claude ejecuta el análisis y las correcciones
+en tu ordenador.
+
+1. Haz doble clic en `Conectar con Claude (Windows).bat` o `Conectar con Claude (Mac).command`
+   (o, desde la línea de comandos: `pip install -e ".[claude]"` y `triada conectar-claude`).
+2. Cierra Claude Desktop del todo y vuelve a abrirlo.
+3. En un chat nuevo, pídele lo que necesites. Verás «Tríada» entre los conectores.
+
+Herramientas que Claude puede usar: `analizar_web`, `listar_analisis`, `ver_problemas`, `ver_correcciones`,
+`editar_correccion` (p. ej. para completar los «REVISAR» con datos que le des), `aplicar_correcciones`
+(HTML modificado, paquete de cambios o carpeta), `exportar_informe` y `deshacer_aplicacion`.
+Los archivos que genera se guardan en `Triada/exportaciones` y `Triada/paquetes` dentro de tu usuario.
+
+Para Claude Code: `claude mcp add triada -- <ruta a .venv/python> -m triada.conector_claude`
+(el comando exacto lo muestra `triada conectar-claude`).
+
 ## Línea de comandos (opcional)
 
 Requiere Python 3.11 o superior.

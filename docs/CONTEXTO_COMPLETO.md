@@ -259,4 +259,7 @@ Clave de proyecto: `demo` para la demostración; si no, el host sin `www.` ni pu
 ## 9. Historial de versiones
 
 0.1 motor de línea de comandos · 0.2 app local con demo · 0.3 fuera de la web (capas, plan de acciones, datos
-externos) · 0.4 SEO solo interno, subida de HTML, exportación de resultados y HTML modificado. Ver `docs/HISTORIAL.md`.
+externos) · 0.4 SEO solo interno, subida de HTML, exportación de resultados y HTML modificado ·
+0.5 botón «Seleccionar todas» por vertiente, aplicar descargando el HTML desde la web (webs sin archivos, p. ej.
+WordPress), rastreo limitado al dominio indicado (antes una redirección interna a otra web la analizaba) y
+conector para Claude (servidor MCP local, `triada/conector_claude.py`, `triada conectar-claude`). Ver `docs/HISTORIAL.md`.
