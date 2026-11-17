@@ -28,6 +28,7 @@ class Page:
     bytes: int = 0
     content_type: str = ""
     x_robots: str = ""
+    fuera_del_sitio: bool = False   # redirige a otro dominio: no se analiza
 
     title: str | None = None
     meta_description: str | None = None

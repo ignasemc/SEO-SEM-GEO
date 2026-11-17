@@ -623,7 +623,8 @@ function vistaAnalizar() {
     <div class="card pad">
       <label class="f" style="margin-top:0">Dirección de la web *</label><input class="i" id="f-url" placeholder="https://www.miempresa.com" value="${esc(c.url)}" oninput="S.form.url=this.value">
       <div class="fila"><div><label class="f">Marca</label><input class="i" value="${esc(c.marca)}" oninput="S.form.marca=this.value" placeholder="Mi Empresa"></div>
-      <div><label class="f">Máximo de páginas</label><input class="i" type="number" min="1" max="2000" value="${c.max_paginas}" oninput="S.form.max_paginas=+this.value"></div></div>
+      <div><label class="f">Máximo de páginas</label><input class="i" type="number" min="1" max="2000" value="${c.max_paginas}" oninput="S.form.max_paginas=+this.value">
+        <div class="ayuda">Solo se analizan páginas de la web indicada (su dominio, con o sin www). Los enlaces y redirecciones a otras webs no se analizan ni se corrigen.</div></div></div>
       <label class="f">Vertientes</label><div class="ramasel">${ramasHTML}</div>
       <label class="f">Modo</label>
       <div class="destino"><label class="opc ${c.combinado ? "on" : ""}"><input type="radio" name="modo" ${c.combinado ? "checked" : ""} onchange="S.form.combinado=true;render()"><div><b>Combinado</b> (recomendado)<small>Optimiza las vertientes a la vez y resuelve conflictos entre ellas.</small></div></label>

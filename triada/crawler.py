@@ -15,7 +15,7 @@ import httpx
 from .config import Config
 from .models import Page, SiteData
 from .parser import parsear
-from .urls import normalizar, parece_html, path_de
+from .urls import mismo_sitio, normalizar, parece_html, path_de
 
 
 async def _get(client: httpx.AsyncClient, url: str) -> httpx.Response | None:
@@ -56,10 +56,6 @@ async def rastrear(cfg: Config, progreso=None) -> SiteData:
     inicio = normalizar(cfg.url)
     if not inicio:
         raise ValueError(f"URL no válida: {cfg.url}")
-    host = urlparse(inicio).netloc
-    raiz = f"{urlparse(inicio).scheme}://{host}"
-    site = SiteData(url_base=raiz, host=host)
-
     limits = httpx.Limits(max_connections=cfg.concurrencia)
     async with httpx.AsyncClient(
         headers={"User-Agent": cfg.user_agent, "Accept-Language": "es,en;q=0.8"},
@@ -67,6 +63,14 @@ async def rastrear(cfg: Config, progreso=None) -> SiteData:
         timeout=cfg.timeout,
         limits=limits,
     ) as client:
+        # El sitio es el dominio de la URL indicada. Si esa URL redirige a otro dominio (p. ej. cambio de
+        # marca o de http a https), se toma el de destino. Nunca se rastrean páginas de otros dominios.
+        r0 = await _get(client, inicio)
+        if r0 is not None and r0.history and (destino := normalizar(str(r0.url))):
+            inicio = destino
+        host = urlparse(inicio).netloc
+        raiz = f"{urlparse(inicio).scheme}://{host}"
+        site = SiteData(url_base=raiz, host=host)
         # robots.txt
         rp = RobotFileParser()
         r = await _get(client, urljoin(raiz, "/robots.txt"))
@@ -84,7 +88,7 @@ async def rastrear(cfg: Config, progreso=None) -> SiteData:
 
         await _leer_sitemaps(client, site, sitemaps_robots or [urljoin(raiz, "/sitemap.xml")], cfg.max_paginas)
 
-        cola: list[str] = [inicio] + sorted(u for u in site.urls_sitemap if urlparse(u).netloc == host)
+        cola: list[str] = [inicio] + sorted(u for u in site.urls_sitemap if mismo_sitio(u, host))
         encolados = set(cola)
         sem = asyncio.Semaphore(cfg.concurrencia)
 
@@ -109,6 +113,13 @@ async def rastrear(cfg: Config, progreso=None) -> SiteData:
                 content_type=resp.headers.get("content-type", ""),
                 x_robots=resp.headers.get("x-robots-tag", "").lower(),
             )
+            if not mismo_sitio(page.final_url, host):
+                # una URL del sitio que redirige a otra web (otra empresa, red social, tienda externa...):
+                # se anota, pero esa otra web no se analiza ni se corrige
+                page.fuera_del_sitio = True
+                page.content_type = ""
+                site.errores_rastreo.append(f"Redirige fuera del sitio (no se analiza): {url} → {page.final_url}")
+                return page
             if resp.status_code == 200 and "html" in page.content_type:
                 parsear(page, resp.text, host)
             return page

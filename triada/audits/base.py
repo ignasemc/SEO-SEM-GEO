@@ -11,7 +11,7 @@ def paginas_contenido(site: SiteData) -> list[Page]:
     """Páginas HTML 200 únicas por URL final (descarta duplicados por redirección)."""
     vistas: dict[str, Page] = {}
     for p in site.pages.values():
-        if p.status == 200 and "html" in p.content_type and p.final_url not in vistas:
+        if p.status == 200 and "html" in p.content_type and not p.fuera_del_sitio and p.final_url not in vistas:
             vistas[p.final_url] = p
     return list(vistas.values())
 

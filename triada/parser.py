@@ -9,7 +9,7 @@ from urllib.parse import urljoin, urlparse
 from bs4 import BeautifulSoup
 
 from .models import Imagen, Page
-from .urls import normalizar
+from .urls import mismo_sitio, normalizar
 
 RE_CTA = re.compile(
     r"\b(comprar|compra|añadir al carrito|anadir al carrito|contactar|contacta|contáctanos|"
@@ -83,7 +83,7 @@ def parsear(page: Page, html: str, host: str) -> Page:
         absoluto = normalizar(urljoin(base, href))
         if not absoluto:
             continue
-        if urlparse(absoluto).netloc == host:
+        if mismo_sitio(absoluto, host):
             page.enlaces_internos.append(absoluto)
         else:
             page.enlaces_externos.append(absoluto)
