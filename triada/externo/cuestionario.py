@@ -1,0 +1,88 @@
+"""Señales externas que se declaran a mano (o se miden cuando hay datos).
+
+Valores: "si" (1), "parcial" (0,5), "no" (0), "na" (no aplica: no cuenta) y sin responder (falta el dato).
+Los pesos son un criterio de Tríada para priorizar, no una métrica oficial.
+"""
+
+from __future__ import annotations
+
+PREGUNTAS: list[dict] = [
+    # ---------------- SEO: es interno, se mide solo en la web (sin señales externas)
+    {"id": "enlaces_sector", "ramas": ["geo"], "peso": 3,
+     "pregunta": "¿Otras webs relevantes de tu sector o tu zona enlazan a tu web?",
+     "ayuda": "Se mide automáticamente si importas el informe de Enlaces de Search Console.",
+     "accion": "Conseguir enlaces de webs del sector (asociaciones, proveedores, medios locales, colaboraciones)",
+     "esfuerzo": "alto", "prioridad": "alta"},
+    {"id": "directorios", "ramas": ["geo"], "peso": 1,
+     "pregunta": "¿Estás en los directorios principales de tu sector y zona, con el mismo nombre, dirección y teléfono?",
+     "ayuda": "Datos idénticos en todas partes ayudan a buscadores e IA a identificar tu empresa.",
+     "accion": "Dar de alta o unificar los datos de la empresa en los directorios del sector", "esfuerzo": "bajo",
+     "prioridad": "media"},
+    {"id": "perfil_google", "ramas": ["geo"], "peso": 2,
+     "pregunta": "¿Tienes el Perfil de Empresa de Google verificado y completo (horario, fotos, categorías, servicios)?",
+     "ayuda": "Se detecta automáticamente si buscas tus reseñas con la API de Google Places.",
+     "accion": "Verificar y completar el Perfil de Empresa de Google", "esfuerzo": "bajo", "prioridad": "alta"},
+    # ---------------- SEM
+    {"id": "conv_primarias", "ramas": ["sem"], "peso": 3,
+     "pregunta": "¿Las conversiones principales de Google Ads son ventas o leads cualificados (no visitas ni clics)?",
+     "ayuda": "La puja automática optimiza hacia lo que marques como conversión principal.",
+     "accion": "Revisar las conversiones principales en Google Ads: solo ventas o leads cualificados",
+     "esfuerzo": "bajo", "prioridad": "alta"},
+    {"id": "conv_mejoradas", "ramas": ["sem"], "peso": 2,
+     "pregunta": "¿Tienes activadas las conversiones mejoradas?",
+     "ayuda": "Recuperan conversiones que se pierden por cookies o cambios de dispositivo.",
+     "accion": "Activar las conversiones mejoradas en Google Ads", "esfuerzo": "medio", "prioridad": "media"},
+    {"id": "listas_clientes", "ramas": ["sem"], "peso": 1,
+     "pregunta": "¿Usas tus propios datos de clientes (Customer Match o listas de clientes) en las campañas?",
+     "ayuda": "Los datos propios son la mejor señal para la automatización ahora que las cookies de terceros desaparecen.",
+     "accion": "Subir listas de clientes (Customer Match) y usarlas como señal de audiencia", "esfuerzo": "medio",
+     "prioridad": "baja"},
+    {"id": "revision_terminos", "ramas": ["sem"], "peso": 2,
+     "pregunta": "¿Revisas los términos de búsqueda y añades palabras clave negativas al menos cada dos semanas?",
+     "ayuda": "Si importas el informe de términos de búsqueda, Tríada te dirá exactamente cuáles añadir.",
+     "accion": "Programar una revisión quincenal de términos de búsqueda y negativas", "esfuerzo": "bajo",
+     "prioridad": "media"},
+    {"id": "merchant_ok", "ramas": ["sem"], "peso": 2, "admite_na": True,
+     "pregunta": "Si vendes productos: ¿tu feed de Merchant Center está sin productos rechazados?",
+     "ayuda": "Marca «No aplica» si no vendes productos online.",
+     "accion": "Corregir los productos rechazados o con advertencias en Merchant Center", "esfuerzo": "medio",
+     "prioridad": "alta"},
+    {"id": "recursos_ads", "ramas": ["sem"], "peso": 1,
+     "pregunta": "¿Tus campañas usan recursos (enlaces de sitio, textos destacados, llamada, ubicación)?",
+     "ayuda": "Aumentan el tamaño del anuncio y el CTR esperado.",
+     "accion": "Añadir recursos a las campañas: enlaces de sitio, textos destacados, llamada y ubicación",
+     "esfuerzo": "bajo", "prioridad": "media"},
+    # ---------------- GEO
+    {"id": "wikidata", "ramas": ["geo"], "peso": 1,
+     "pregunta": "¿Tu empresa tiene una entrada en Wikidata con datos verificables?",
+     "ayuda": "Se puede comprobar automáticamente. Wikidata es una fuente de entidades que usan buscadores e IA.",
+     "accion": "Crear la entrada de la empresa en Wikidata (nombre, sector, sede, web, fundación)",
+     "esfuerzo": "bajo", "prioridad": "media"},
+    {"id": "resenas", "ramas": ["geo"], "peso": 3,
+     "pregunta": "¿Tienes reseñas recientes en Google y en plataformas de tu sector, y las respondes?",
+     "ayuda": "Se mide automáticamente con la API de Google Places (nota y número de reseñas).",
+     "accion": "Conseguir más reseñas reales (pedirlas tras cada servicio) y responderlas todas",
+     "esfuerzo": "medio", "prioridad": "alta"},
+    {"id": "comparativas", "ramas": ["geo"], "peso": 3,
+     "pregunta": "¿Apareces en comparativas o listados tipo «mejores X» de webs de tu sector?",
+     "ayuda": "Los listados y comparativas de terceros son de las fuentes que más citan las IA.",
+     "accion": "Conseguir aparecer en comparativas y listados «mejores X» del sector", "esfuerzo": "alto",
+     "prioridad": "alta"},
+    {"id": "prensa", "ramas": ["geo"], "peso": 2,
+     "pregunta": "¿Te han mencionado medios o publicaciones de tu sector en el último año?",
+     "ayuda": "Notas de prensa con datos propios, entrevistas, colaboraciones con asociaciones…",
+     "accion": "Plan de relaciones con medios: datos propios, casos de éxito y colaboraciones",
+     "esfuerzo": "alto", "prioridad": "media"},
+    {"id": "comunidades", "ramas": ["geo"], "peso": 1,
+     "pregunta": "¿Participas o te mencionan de forma auténtica en foros, Reddit o YouTube?",
+     "ayuda": "Nunca menciones falsas: además de engañoso, no funciona.",
+     "accion": "Participar de forma auténtica en comunidades del sector (respuestas útiles, vídeos, casos)",
+     "esfuerzo": "medio", "prioridad": "baja"},
+    {"id": "perfiles_oficiales", "ramas": ["geo"], "peso": 1,
+     "pregunta": "¿Tienes perfiles oficiales activos (LinkedIn, redes) enlazados desde tu web?",
+     "ayuda": "Refuerzan la entidad de marca; enlázalos también en el schema Organization (sameAs).",
+     "accion": "Activar y enlazar los perfiles oficiales de la empresa", "esfuerzo": "bajo", "prioridad": "baja"},
+]
+
+POR_ID = {p["id"]: p for p in PREGUNTAS}
+VALOR = {"si": 1.0, "parcial": 0.5, "no": 0.0}

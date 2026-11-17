@@ -1,0 +1,301 @@
+"""Solucionar sobre archivos HTML subidos.
+
+El usuario sube páginas sueltas (.html/.htm) o un .zip con la web. Cada archivo se asigna a una página
+del análisis (automáticamente por canonical, ruta, título o H1, o a mano). Las correcciones se aplican
+sobre una copia: los originales se conservan para poder restablecerlos, y el HTML modificado se descarga
+como archivo suelto o en un .zip.
+"""
+
+from __future__ import annotations
+
+import base64
+import io
+import json
+import re
+import shutil
+import unicodedata
+import zipfile
+from datetime import datetime
+from pathlib import Path, PurePosixPath
+from typing import Any
+from urllib.parse import urljoin, urlparse
+
+from bs4 import BeautifulSoup
+
+from .aplicar import ErrorAplicacion, _validar, aplicar_en_html, seleccionar
+from .servicio import carpeta_datos, leer_analisis
+
+EXT_HTML = (".html", ".htm")
+MAX_TOTAL = 60 * 1024 * 1024
+
+
+def _base(aid: str) -> Path:
+    if not re.fullmatch(r"[0-9A-Za-z\-]+", aid or ""):
+        raise ErrorAplicacion("Análisis no válido")
+    return carpeta_datos() / "subidas" / aid
+
+
+def _leer_estado(aid: str) -> dict[str, Any]:
+    f = _base(aid) / "estado.json"
+    if f.exists():
+        return json.loads(f.read_text(encoding="utf-8"))
+    return {"archivos": [], "aplicados": {}, "historial": []}
+
+
+def _guardar_estado(aid: str, est: dict[str, Any]) -> None:
+    b = _base(aid)
+    b.mkdir(parents=True, exist_ok=True)
+    (b / "estado.json").write_text(json.dumps(est, ensure_ascii=False, indent=2), encoding="utf-8")
+
+
+def _nombre_seguro(nombre: str) -> str | None:
+    """Ruta relativa limpia (sin '..' ni rutas absolutas)."""
+    partes = [p for p in PurePosixPath(nombre.replace("\\", "/")).parts if p not in ("", ".", "/")]
+    if not partes or any(p == ".." for p in partes):
+        return None
+    return "/".join(partes)
+
+
+def _norm(t: str | None) -> str:
+    t = unicodedata.normalize("NFKD", (t or "").lower())
+    return " ".join("".join(c for c in t if not unicodedata.combining(c)).split())
+
+
+def _path(u: str) -> str:
+    p = urlparse(u).path or "/"
+    p = re.sub(r"/index\.html?$", "/", p)
+    return p.rstrip("/") or "/"
+
+
+def _ruta_desde_nombre(nombre: str) -> str:
+    """'blog/post/index.html' -> '/blog/post' · 'contacto.html' -> '/contacto' · 'index.html' -> '/'."""
+    p = "/" + nombre
+    p = re.sub(r"(^|/)index\.html?$", r"\1", p)
+    p = re.sub(r"\.html?$", "", p)
+    return p.rstrip("/") or "/"
+
+
+def emparejar(html: str, nombre: str, paginas: list[dict[str, Any]]) -> tuple[str | None, str]:
+    """Busca a qué página del análisis corresponde un archivo. Devuelve (url, método)."""
+    por_ruta = {_path(p["url"]): p["url"] for p in paginas}
+    soup = BeautifulSoup(html, "html.parser")
+    can = soup.find("link", rel=lambda v: v and "canonical" in v)
+    if can and can.get("href"):
+        destino = _path(urljoin(paginas[0]["url"] if paginas else "http://x/", can["href"]))
+        if destino in por_ruta:
+            return por_ruta[destino], "canonical"
+    ruta = _ruta_desde_nombre(nombre)
+    if ruta in por_ruta:
+        return por_ruta[ruta], "ruta del archivo"
+    # solo el nombre del archivo (subidas sueltas sin carpetas): 'reformas.html' -> '/servicios/reformas'
+    hoja = ruta.rsplit("/", 1)[-1]
+    if hoja:
+        candidatos = [u for r, u in por_ruta.items() if r.rsplit("/", 1)[-1] == hoja]
+        if len(candidatos) == 1:
+            return candidatos[0], "nombre del archivo"
+    titulo = _norm(soup.title.string if soup.title and soup.title.string else "")
+    if titulo:
+        c = [p["url"] for p in paginas if _norm(p.get("title")) == titulo]
+        if len(c) == 1:
+            return c[0], "título"
+    h1 = soup.find("h1")
+    if h1:
+        t = _norm(h1.get_text(" "))
+        c = [p["url"] for p in paginas if _norm(p.get("h1")) == t]
+        if len(c) == 1:
+            return c[0], "H1"
+    return None, ""
+
+
+def _decodificar(texto_b64: str) -> bytes:
+    return base64.b64decode(texto_b64.split(",", 1)[-1])
+
+
+def _texto(datos: bytes) -> str:
+    for cod in ("utf-8-sig", "cp1252", "latin-1"):
+        try:
+            return datos.decode(cod)
+        except UnicodeDecodeError:
+            continue
+    return datos.decode("utf-8", errors="replace")
+
+
+def subir(aid: str, archivos: list[dict[str, str]]) -> dict[str, Any]:
+    analisis = leer_analisis(aid)
+    if analisis is None:
+        raise ErrorAplicacion("Análisis no encontrado")
+    base = _base(aid)
+    (base / "original").mkdir(parents=True, exist_ok=True)
+    (base / "modificado").mkdir(parents=True, exist_ok=True)
+    est = _leer_estado(aid)
+    existentes = {a["nombre"]: a for a in est["archivos"]}
+    nuevos: list[tuple[str, bytes]] = []
+    total = 0
+    for a in archivos:
+        datos = _decodificar(a.get("contenido", ""))
+        total += len(datos)
+        if total > MAX_TOTAL:
+            raise ErrorAplicacion("Los archivos superan el máximo de 60 MB.")
+        nombre = a.get("nombre", "")
+        if nombre.lower().endswith(".zip") or datos[:2] == b"PK":
+            with zipfile.ZipFile(io.BytesIO(datos)) as z:
+                # se descartan rutas peligrosas (../) y carpetas de sistema
+                internos = [(n, seg) for n in z.namelist()
+                            if n.lower().endswith(EXT_HTML) and not n.startswith("__MACOSX")
+                            and (seg := _nombre_seguro(n))]
+                # si todo el zip cuelga de una carpeta raíz común, se quita
+                raiz = ""
+                if internos and all("/" in seg for _, seg in internos):
+                    primeras = {seg.split("/", 1)[0] for _, seg in internos}
+                    if len(primeras) == 1:
+                        raiz = primeras.pop() + "/"
+                for n, seg in internos:
+                    nuevos.append((seg[len(raiz):], z.read(n)))
+        elif nombre.lower().endswith(EXT_HTML):
+            seguro = _nombre_seguro(PurePosixPath(nombre).name)
+            if seguro:
+                nuevos.append((seguro, datos))
+        else:
+            raise ErrorAplicacion(f"{nombre}: solo se admiten archivos .html, .htm o .zip")
+    if not nuevos:
+        raise ErrorAplicacion("No se encontró ningún archivo HTML.")
+
+    for nombre, datos in nuevos:
+        for carpeta in ("original", "modificado"):
+            destino = base / carpeta / nombre
+            destino.parent.mkdir(parents=True, exist_ok=True)
+            destino.write_bytes(datos)
+        url, metodo = emparejar(_texto(datos), nombre, analisis["paginas"])
+        existentes[nombre] = {"nombre": nombre, "url": url, "metodo": metodo or None, "bytes": len(datos)}
+        est["aplicados"].pop(nombre, None)  # un archivo re-subido empieza de cero
+    est["archivos"] = sorted(existentes.values(), key=lambda x: x["nombre"])
+    _guardar_estado(aid, est)
+    return estado(aid)
+
+
+def asignar(aid: str, nombre: str, url: str | None) -> dict[str, Any]:
+    analisis = leer_analisis(aid)
+    est = _leer_estado(aid)
+    a = next((x for x in est["archivos"] if x["nombre"] == nombre), None)
+    if a is None:
+        raise ErrorAplicacion("Archivo no encontrado")
+    if url and url not in {p["url"] for p in analisis["paginas"]}:
+        raise ErrorAplicacion("Página no válida")
+    a["url"], a["metodo"] = (url or None), ("manual" if url else None)
+    _guardar_estado(aid, est)
+    return estado(aid)
+
+
+def aplicar(aid: str, ids: list[str], ediciones: dict[str, str]) -> dict[str, Any]:
+    analisis = leer_analisis(aid)
+    if analisis is None:
+        raise ErrorAplicacion("Análisis no encontrado")
+    est = _leer_estado(aid)
+    if not est["archivos"]:
+        raise ErrorAplicacion("Primero sube los archivos HTML.")
+    base = _base(aid)
+    por_url: dict[str, list[dict]] = {}
+    for a in est["archivos"]:
+        if a["url"]:
+            por_url.setdefault(a["url"], []).append(a)
+    aplicados: list[str] = []
+    omitidos: list[dict[str, str]] = []
+    pendientes: dict[str, list[dict]] = {}
+    for f in seleccionar(analisis, ids, ediciones):
+        motivo = _validar(f)
+        if motivo:
+            omitidos.append({"id": f["id"], "motivo": motivo})
+            continue
+        if f["tipo"] == "archivo":
+            nombre = PurePosixPath(urlparse(f["url"] or "").path).name
+            if nombre in ("robots.txt", "sitemap.xml"):
+                (base / "modificado" / nombre).write_text(f["valor_propuesto"], encoding="utf-8")
+                est["aplicados"].setdefault(nombre, [])
+                if f["id"] not in est["aplicados"][nombre]:
+                    est["aplicados"][nombre].append(f["id"])
+                aplicados.append(f["id"])
+            else:
+                omitidos.append({"id": f["id"], "motivo": "Tipo de archivo no soportado"})
+            continue
+        destinos = por_url.get(f.get("url") or "", [])
+        if not destinos:
+            omitidos.append({"id": f["id"], "motivo": "Ningún archivo subido corresponde a esta página"})
+            continue
+        for a in destinos:
+            if f["id"] in est["aplicados"].get(a["nombre"], []):
+                continue  # ya aplicada a este archivo: no se duplica (p. ej. un H1)
+            pendientes.setdefault(a["nombre"], []).append(f)
+    for nombre, lista in pendientes.items():
+        ruta = base / "modificado" / nombre
+        try:
+            html, hechos = aplicar_en_html(_texto(ruta.read_bytes()), lista[0]["url"], lista)
+        except ErrorAplicacion as e:
+            omitidos.extend({"id": f["id"], "motivo": str(e)} for f in lista)
+            continue
+        ruta.write_text(html, encoding="utf-8")
+        est["aplicados"].setdefault(nombre, []).extend(hechos)
+        aplicados.extend(hechos)
+        omitidos.extend({"id": f["id"], "motivo": "No se encontró el elemento a modificar"}
+                        for f in lista if f["id"] not in hechos)
+    aplicados = list(dict.fromkeys(aplicados))
+    est["historial"].append({"fecha": datetime.now().isoformat(timespec="seconds"), "aplicados": aplicados})
+    _guardar_estado(aid, est)
+    return {"aplicados": aplicados, "omitidos": omitidos, "subidas": estado(aid)}
+
+
+def restablecer(aid: str) -> dict[str, Any]:
+    base = _base(aid)
+    if (base / "modificado").exists():
+        shutil.rmtree(base / "modificado")
+    if (base / "original").exists():
+        shutil.copytree(base / "original", base / "modificado")
+    est = _leer_estado(aid)
+    est["aplicados"] = {}
+    est["historial"].append({"fecha": datetime.now().isoformat(timespec="seconds"), "restablecido": True})
+    _guardar_estado(aid, est)
+    return estado(aid)
+
+
+def borrar(aid: str) -> dict[str, Any]:
+    base = _base(aid)
+    if base.exists():
+        shutil.rmtree(base)
+    return estado(aid)
+
+
+def estado(aid: str) -> dict[str, Any]:
+    est = _leer_estado(aid)
+    extra = [n for n in est["aplicados"] if n in ("robots.txt", "sitemap.xml")]
+    ids = sorted({i for lista in est["aplicados"].values() for i in lista})
+    return {
+        "archivos": [a | {"cambios": len(est["aplicados"].get(a["nombre"], []))} for a in est["archivos"]],
+        "generados": extra, "aplicados": ids,
+        "modificados": sum(1 for v in est["aplicados"].values() if v),
+    }
+
+
+def archivo(aid: str, nombre: str) -> tuple[bytes, str]:
+    seguro = _nombre_seguro(nombre)
+    est = _leer_estado(aid)
+    validos = {a["nombre"] for a in est["archivos"]} | {"robots.txt", "sitemap.xml"}
+    ruta = _base(aid) / "modificado" / (seguro or "")
+    if not seguro or seguro not in validos or not ruta.is_file():
+        raise ErrorAplicacion("Archivo no encontrado")
+    return ruta.read_bytes(), PurePosixPath(seguro).name
+
+
+def zip_modificados(aid: str) -> bytes:
+    est = _leer_estado(aid)
+    base = _base(aid) / "modificado"
+    if not est["archivos"]:
+        raise ErrorAplicacion("No hay archivos subidos.")
+    buf = io.BytesIO()
+    with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as z:
+        for a in est["archivos"]:
+            z.write(base / a["nombre"], a["nombre"])
+        for extra in ("robots.txt", "sitemap.xml"):
+            if extra in est["aplicados"] and (base / extra).exists():
+                z.write(base / extra, extra)
+        cambios = "\n".join(f"{n}: {', '.join(v)}" for n, v in est["aplicados"].items() if v) or "Sin cambios aplicados."
+        z.writestr("CAMBIOS.txt", "Correcciones aplicadas por Tríada (ID por archivo)\n\n" + cambios + "\n")
+    return buf.getvalue()

@@ -1,0 +1,11 @@
+User-agent: *
+Disallow: /admin/
+
+User-agent: GPTBot
+Disallow: /
+
+User-agent: OAI-SearchBot
+Disallow: /
+
+User-agent: PerplexityBot
+Disallow: /

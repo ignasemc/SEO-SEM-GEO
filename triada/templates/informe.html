@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Informe Tríada · {{ host }}</title>
+<style>
+  :root{--fg:#1d1f23;--muted:#5d6470;--line:#e3e5e8;--bg:#fafaf9;--card:#fff;
+        --seo:#2f6f4f;--sem:#2b5aa8;--geo:#8a4fb0;--crit:#b42318;--alta:#c4570c;--media:#a17a00;--baja:#5d6470}
+  *{box-sizing:border-box} body{margin:0;font:15px/1.55 system-ui,-apple-system,"Segoe UI",sans-serif;color:var(--fg);background:var(--bg)}
+  main{max-width:1080px;margin:0 auto;padding:40px 24px 80px}
+  h1{font-size:28px;margin:0 0 4px} h2{font-size:20px;margin:48px 0 12px;padding-bottom:8px;border-bottom:1px solid var(--line)}
+  h3{font-size:16px;margin:0} .muted{color:var(--muted)} small{font-size:13px}
+  .scores{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px;margin-top:24px}
+  .score{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:18px 20px}
+  .score .n{font-size:40px;font-weight:700;line-height:1.1}
+  .bar{height:6px;background:var(--line);border-radius:3px;margin-top:10px;overflow:hidden}.bar i{display:block;height:100%}
+  .tag{display:inline-block;font-size:12px;font-weight:600;padding:1px 8px;border-radius:999px;color:#fff;margin-right:4px}
+  .t-seo{background:var(--seo)}.t-sem{background:var(--sem)}.t-geo{background:var(--geo)}
+  .sev{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.03em}
+  .s-critica{color:var(--crit)}.s-alta{color:var(--alta)}.s-media{color:var(--media)}.s-baja{color:var(--baja)}
+  table{width:100%;border-collapse:collapse;background:var(--card);border:1px solid var(--line);border-radius:10px;overflow:hidden}
+  th,td{text-align:left;padding:10px 12px;border-bottom:1px solid var(--line);vertical-align:top} th{font-size:13px;color:var(--muted);font-weight:600;background:#f4f4f2}
+  tr:last-child td{border-bottom:0}
+  .issue{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:14px 18px;margin-bottom:10px}
+  .issue p{margin:6px 0} .conf{background:#fff7e6;border-left:3px solid var(--media);padding:6px 10px;border-radius:4px;font-size:14px}
+  details summary{cursor:pointer;color:var(--muted);font-size:13px} details ul{margin:6px 0;padding-left:18px;font-size:13px;word-break:break-all}
+  pre{background:#f4f4f2;border:1px solid var(--line);border-radius:6px;padding:10px;font-size:12px;white-space:pre-wrap;word-break:break-word;max-height:260px;overflow:auto;margin:6px 0}
+  .ok{color:var(--seo);font-weight:600}.ko{color:var(--crit);font-weight:600}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px} @media(max-width:760px){.grid2{grid-template-columns:1fr}}
+  .box{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:16px 20px} .box ul{margin:8px 0;padding-left:20px}
+  @media print{body{background:#fff}main{padding:0}.issue,.score,table,.box{break-inside:avoid}pre{max-height:none}h2{break-after:avoid}}
+</style>
+</head>
+<body><main>
+<h1>Informe de optimización{% if titulo_rama %} · {{ titulo_rama }}{% endif %}</h1>
+<div class="muted">{{ host }} · {{ fecha }} · {{ total_paginas }} páginas analizadas ·
+  modo <strong>{{ "combinado" if combinado else "independiente" }}</strong> ({{ ramas|join(", ")|upper }})</div>
+
+<div class="scores">
+{% for r in ramas %}
+  <div class="score">
+    <span class="tag t-{{ r }}">{{ r|upper }}</span>
+    {% if capas and capas[r].total is not none %}
+    <div class="n">{{ capas[r].total }}<small class="muted">/100 global</small></div>
+    <div class="muted"><small>En la web {{ puntuaciones[r] }} · cobertura {{ capas[r].cobertura }} %{% if capas[r].provisional %} · provisional{% endif %} · {{ conteo[r] }} problemas en la web</small></div>
+    {% else %}
+    <div class="n">{{ puntuaciones[r] }}<small class="muted">/100 solo en la web</small></div>
+    <div class="muted"><small>{{ conteo[r] }} problemas detectados{% if capas %} · faltan datos de fuera de la web{% endif %}</small></div>
+    {% endif %}
+    <div class="bar"><i style="width:{{ capas[r].total if capas and capas[r].total is not none else puntuaciones[r] }}%;background:var(--{{ r }})"></i></div>
+  </div>
+{% endfor %}
+</div>
+<p class="muted"><small>La puntuación es un indicador interno de Tríada para priorizar y comparar en el tiempo. No es una métrica oficial de Google ni garantiza posiciones o citas.</small></p>
+
+{% if capas %}
+<h2>Nota por capas: dentro y fuera de la web</h2>
+<p class="muted">SEO se evalúa con lo que hay en la web. SEM y GEO dependen mucho de factores externos, así que se evalúan en tres capas. Si falta un dato se indica «sin datos»: nunca se rellena con un valor inventado.</p>
+<table>
+<tr><th>Vertiente</th><th>En la web</th><th>Señales externas</th><th>Resultado real</th><th>Nota global</th><th>Cobertura</th></tr>
+{% for r in ramas %}{% set c = capas[r] %}
+{% if c.interno %}
+<tr><td><span class="tag t-{{ r }}">{{ r|upper }}</span></td><td>{{ c.web if c.web is not none else "—" }}</td>
+<td colspan="2" class="muted"><small>Interno: el SEO se evalúa solo con lo que hay en la web</small></td>
+<td><strong>{{ c.total if c.total is not none else "—" }}</strong></td><td>—</td></tr>
+{% else %}
+<tr><td><span class="tag t-{{ r }}">{{ r|upper }}</span></td>
+<td>{{ c.web if c.web is not none else "—" }}</td>
+<td>{% if c.externo.valor is not none %}{{ c.externo.valor }} <small class="muted">({{ (c.externo.cobertura*100)|round|int }} % respondido)</small>{% else %}<span class="muted">sin datos</span>{% endif %}</td>
+<td>{% if c.resultado.valor is not none %}{{ c.resultado.valor }} <small class="muted">{{ c.resultado.fuente }}</small>{% else %}<span class="muted">sin datos</span>{% endif %}</td>
+<td>{% if c.total is not none %}<strong>{{ c.total }}</strong>{% if c.provisional %} <small class="sev s-media">provisional</small>{% endif %}{% else %}<span class="muted">faltan datos externos</span>{% endif %}</td>
+<td>{{ c.cobertura }} %</td></tr>
+{% endif %}
+{% endfor %}
+</table>
+<p class="muted"><small>Nota global = peso «en la web» × nota en la web + resto × media de señales externas y resultado. Pesos actuales (en la web/fuera): {% for r in ramas if not capas[r].interno %}{{ r|upper }} {{ (capas[r].peso_web*100)|round|int }}/{{ 100 - (capas[r].peso_web*100)|round|int }}{% if not loop.last %} · {% endif %}{% endfor %}. SEO: solo en la web.</small></p>
+{% endif %}
+
+<h2>Prioridades</h2>
+<table>
+<tr><th>#</th><th>Problema</th><th>Afecta a</th><th>Severidad</th><th>URLs</th></tr>
+{% for i in issues[:12] %}
+<tr><td>{{ loop.index }}</td><td>{{ i.mensaje }}</td>
+<td>{% for r in i.ramas|sort %}<span class="tag t-{{ r }}">{{ r|upper }}</span>{% endfor %}</td>
+<td><span class="sev s-{{ i.severidad }}">{{ i.severidad }}</span></td><td>{{ i.urls|length or "sitio" }}</td></tr>
+{% endfor %}
+</table>
+
+{% for r in ramas %}
+<h2><span class="tag t-{{ r }}">{{ r|upper }}</span> {{ titulos[r] }}</h2>
+{% set lista = issues|selectattr("ramas", "contains_rama", r)|list %}
+{% if not lista %}<p class="ok">Sin problemas detectados en esta vertiente.</p>{% endif %}
+{% for i in lista %}
+<div class="issue">
+  <span class="sev s-{{ i.severidad }}">{{ i.severidad }}</span>
+  {% for o in i.ramas|sort if o != r %}<span class="tag t-{{ o }}" title="También afecta a {{ o|upper }}">+{{ o|upper }}</span>{% endfor %}
+  <h3>{{ i.mensaje }}</h3>
+  <p>{{ i.recomendacion }}</p>
+  {% if i.nota_conflicto %}<p class="conf">⚖️ {{ i.nota_conflicto }}</p>{% endif %}
+  {% if i.urls %}<details><summary>{{ i.urls|length }} URL(s)</summary><ul>
+    {% for u in i.urls[:30] %}<li>{{ u }}</li>{% endfor %}{% if i.urls|length > 30 %}<li>… y {{ i.urls|length - 30 }} más</li>{% endif %}
+  </ul></details>{% endif %}
+</div>
+{% endfor %}
+{% endfor %}
+
+<h2>Correcciones propuestas ({{ fixes|length }})</h2>
+<p class="muted">También en <code>correcciones.csv</code> / <code>correcciones.json</code>. Los archivos generados están en la carpeta del informe. Nada se ha publicado en tu web.</p>
+<table>
+<tr><th>ID</th><th>Página</th><th>Cambio</th><th>Actual</th><th>Propuesto</th></tr>
+{% for f in fixes[:200] %}
+<tr><td><small>{{ f.id }}</small></td><td><small>{{ f.url or "—" }}</small></td><td><small>{{ f.tipo }}</small>{% if f.requiere_revision %}<br><span class="sev s-media">revisar</span>{% endif %}</td>
+<td><small>{{ (f.valor_actual or "—")|truncate(120) }}</small></td>
+<td>{% if f.valor_propuesto|length > 120 %}<pre>{{ f.valor_propuesto }}</pre>{% else %}{{ f.valor_propuesto }}{% endif %}
+{% if f.nota %}<div class="muted"><small>{{ f.nota }}</small></div>{% endif %}</td></tr>
+{% endfor %}
+</table>
+
+{% if "geo" in ramas %}
+<h2>Acceso de rastreadores (robots.txt)</h2>
+<table><tr><th>Rastreador</th><th>Uso</th><th>Estado</th></tr>
+{% for bot, ok in bots.items() %}
+<tr><td>{{ bot }}</td><td class="muted"><small>{{ uso_bots[bot] }}</small></td><td>{% if ok %}<span class="ok">Permitido</span>{% else %}<span class="ko">Bloqueado</span>{% endif %}</td></tr>
+{% endfor %}</table>
+{% endif %}
+
+{% if acciones %}
+<h2>Plan de acciones fuera de la web ({{ acciones|selectattr("estado", "in", ["pendiente", "en_curso"])|list|length }} pendientes)</h2>
+<table>
+<tr><th>Acción</th><th>Afecta a</th><th>Por qué</th><th>Prioridad</th><th>Esfuerzo</th><th>Estado</th><th>Responsable</th></tr>
+{% for a in acciones %}
+<tr><td><strong>{{ a.accion }}</strong>{% if a.detalle %}<details><summary>Detalle</summary><ul>{% for d in a.detalle %}<li>{{ d }}</li>{% endfor %}</ul></details>{% endif %}</td>
+<td>{% for r in a.ramas|sort %}<span class="tag t-{{ r }}">{{ r|upper }}</span> {% endfor %}</td>
+<td><small>{{ a.porque }}</small><br><small class="muted">Verificación: {{ a.verificacion }}</small></td>
+<td><span class="sev s-{{ a.prioridad }}">{{ a.prioridad }}</span></td><td>{{ a.esfuerzo }}</td>
+<td>{{ {"pendiente": "Pendiente", "en_curso": "En curso", "hecho": "Hecho", "descartada": "Descartada"}[a.estado] }}{% if a.verificada %} ✓<small class="muted"> verificada</small>{% endif %}</td>
+<td>{{ a.responsable or "—" }}{% if a.fecha %}<br><small class="muted">{{ a.fecha }}</small>{% endif %}</td></tr>
+{% endfor %}
+</table>
+{% else %}
+<h2>Fuera de tu web</h2>
+<p class="muted">El motor no puede comprobar esto automáticamente, pero pesa mucho, sobre todo en GEO: la mayoría de las menciones de marca en respuestas de IA proceden de webs de terceros.</p>
+<div class="grid2">
+  <div class="box"><h3>SEO y GEO</h3><ul>
+    <li>Perfil de Empresa de Google completo y con reseñas reales recientes.</li>
+    <li>Reseñas en plataformas del sector (Trustpilot, G2, Google…), respondidas.</li>
+    <li>Presencia en comparativas y listados "mejores X" del sector (relaciones con medios).</li>
+    <li>Mismo nombre, dirección y teléfono en todos los directorios.</li>
+    <li>Entrada en Wikidata con datos verificables; perfiles sociales enlazados en sameAs.</li>
+    <li>Participación auténtica en foros y comunidades (Reddit, YouTube) — nunca menciones falsas.</li>
+  </ul></div>
+  <div class="box"><h3>SEM</h3><ul>
+    <li>Conversiones primarias = ventas o leads cualificados (no micro-conversiones).</li>
+    <li>Conversiones mejoradas activadas y listas de clientes (first-party) cargadas.</li>
+    <li>Revisión semanal de términos de búsqueda y palabras clave negativas.</li>
+    <li>Feed de Merchant Center coherente con el schema y el precio visible.</li>
+    <li>Rendimiento por recurso (titulares/descripciones) en lugar de la "calidad del anuncio".</li>
+  </ul></div>
+</div>
+{% endif %}
+
+{% if errores %}
+<h2>Avisos del rastreo</h2>
+<details><summary>{{ errores|length }} aviso(s)</summary><ul>{% for e in errores[:100] %}<li>{{ e }}</li>{% endfor %}</ul></details>
+{% endif %}
+<p class="muted" style="margin-top:48px"><small>Generado por Tríada {{ version }}.</small></p>
+</main>
+{% if imprimir %}<script>window.addEventListener("load",()=>{document.querySelectorAll("details").forEach(d=>d.open=true);setTimeout(()=>window.print(),300)})</script>{% endif %}
+</body></html>

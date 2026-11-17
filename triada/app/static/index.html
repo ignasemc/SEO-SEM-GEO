@@ -1,0 +1,1025 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tríada · SEO, SEM y GEO</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><circle cx='10' cy='20' r='7' fill='%232f6f4f'/><circle cx='22' cy='20' r='7' fill='%232b5aa8' fill-opacity='.85'/><circle cx='16' cy='10' r='7' fill='%238a4fb0' fill-opacity='.85'/></svg>">
+<style>
+:root{
+  --fg:#1b1d21;--muted:#646b76;--soft:#8b919b;--line:#e4e2dd;--bg:#f6f5f2;--card:#fff;--hover:#f0efeb;
+  --seo:#2f6f4f;--seo-bg:#e7f1ec;--sem:#2b5aa8;--sem-bg:#e6edf8;--geo:#8a4fb0;--geo-bg:#f2eaf7;
+  --crit:#b42318;--alta:#c4570c;--media:#9a7400;--baja:#646b76;--ok:#2f6f4f;
+  --r:10px;--sombra:0 1px 2px rgba(20,20,20,.04),0 2px 8px rgba(20,20,20,.04);
+}
+*{box-sizing:border-box}html,body{margin:0;height:100%}
+body{font:14.5px/1.55 ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;color:var(--fg);background:var(--bg)}
+button,input,select,textarea{font:inherit;color:inherit}
+a{color:var(--sem)}
+.app{display:grid;grid-template-columns:236px 1fr;min-height:100vh;background:linear-gradient(to right,#fbfaf8 235px,var(--line) 235px,var(--line) 236px,transparent 236px)}
+/* barra lateral */
+aside{padding:20px 14px;display:flex;flex-direction:column;gap:4px;position:sticky;top:0;height:100vh}
+.logo{display:flex;align-items:center;gap:10px;padding:4px 10px 18px}
+.logo b{font-size:19px;letter-spacing:-.01em}.logo small{display:block;color:var(--muted);font-size:11.5px;margin-top:-2px}
+.nav a{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:8px;color:var(--fg);text-decoration:none;font-weight:500}
+.nav a:hover{background:var(--hover)}.nav a.on{background:#fff;box-shadow:var(--sombra);border:1px solid var(--line);padding:7px 9px}
+.nav .sep{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--soft);padding:16px 10px 4px}
+.punto{width:9px;height:9px;border-radius:50%;flex:none}
+.nav .pts{margin-left:auto;font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
+aside .pie{margin-top:auto;font-size:11.5px;color:var(--soft);padding:0 10px;word-break:break-all}
+/* principal */
+main{padding:22px 34px 70px;max-width:1200px;width:100%}
+.top{display:flex;align-items:center;gap:12px;margin-bottom:22px;flex-wrap:wrap}
+.top h1{font-size:22px;margin:0;letter-spacing:-.01em}.top .esp{flex:1}
+.sub{color:var(--muted);font-size:13px}
+select.sel{padding:7px 10px;border:1px solid var(--line);border-radius:8px;background:#fff;max-width:340px}
+.btn{display:inline-flex;align-items:center;gap:7px;padding:8px 14px;border-radius:8px;border:1px solid var(--line);background:#fff;cursor:pointer;font-weight:550;text-decoration:none;color:var(--fg);white-space:nowrap}
+.btn:hover{background:var(--hover)}.btn:disabled{opacity:.5;cursor:not-allowed}
+.btn.pri{background:var(--fg);border-color:var(--fg);color:#fff}.btn.pri:hover{background:#000}
+.btn.seo{background:var(--seo);border-color:var(--seo);color:#fff}.btn.sem{background:var(--sem);border-color:var(--sem);color:#fff}.btn.geo{background:var(--geo);border-color:var(--geo);color:#fff}
+.btn.peq{padding:5px 10px;font-size:13px}.btn.link{border:0;background:none;color:var(--sem);padding:4px 6px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--sombra)}
+.pad{padding:18px 20px}
+h2{font-size:16px;margin:30px 0 12px;letter-spacing:-.005em}h3{font-size:15px;margin:0}
+.grid3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}.grid2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+@media(max-width:1000px){.grid3,.grid2{grid-template-columns:1fr}.app{grid-template-columns:1fr}aside{position:static;height:auto}}
+.tag{display:inline-block;font-size:11.5px;font-weight:650;padding:1px 8px;border-radius:999px;color:#fff;letter-spacing:.02em}
+.t-seo{background:var(--seo)}.t-sem{background:var(--sem)}.t-geo{background:var(--geo)}
+.sev{font-size:11.5px;font-weight:700;text-transform:uppercase;letter-spacing:.04em}
+.s-critica{color:var(--crit)}.s-alta{color:var(--alta)}.s-media{color:var(--media)}.s-baja{color:var(--baja)}
+/* puntuación */
+.score{padding:16px 16px;display:flex;gap:14px;min-width:0;align-items:center;cursor:pointer;transition:transform .12s}
+.score:hover{transform:translateY(-1px)}
+.anillo{--v:0;--c:var(--seo);width:84px;height:84px;border-radius:50%;flex:none;display:grid;place-items:center;
+  background:conic-gradient(var(--c) calc(var(--v)*1%),#ecebe7 0)}
+.anillo span{width:66px;height:66px;border-radius:50%;background:#fff;display:grid;place-items:center;font-size:24px;font-weight:750;font-variant-numeric:tabular-nums}
+.score .det{flex:1;min-width:0}.score .det b{font-size:15px}
+.delta{font-size:12.5px;font-weight:650}.delta.up{color:var(--ok)}.delta.down{color:var(--crit)}
+.acc{display:flex;gap:6px;margin-top:10px;flex-wrap:wrap}
+/* tablas */
+table{width:100%;border-collapse:collapse}
+th,td{text-align:left;padding:9px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-size:12px;color:var(--muted);font-weight:600;background:#faf9f7;position:sticky;top:0}
+tr:last-child td{border-bottom:0}td.num{font-variant-numeric:tabular-nums;text-align:right}
+.tabla{overflow:auto;max-height:520px}
+.url{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12.5px;word-break:break-all}
+.si{color:var(--ok);font-weight:650}.no{color:var(--crit);font-weight:650}.aviso{color:var(--alta);font-weight:650}
+/* issues */
+.issue{padding:14px 18px;margin-bottom:10px}
+.issue h3{margin:5px 0 4px;font-size:14.5px}.issue p{margin:4px 0;color:#3a3e45}
+.conf{background:#fff7e6;border-left:3px solid var(--media);padding:6px 10px;border-radius:4px;font-size:13.5px;margin-top:8px}
+details summary{cursor:pointer;color:var(--muted);font-size:13px;margin-top:6px}
+details ul{margin:6px 0;padding-left:18px}
+.chips{display:flex;gap:8px;flex-wrap:wrap;margin:4px 0 14px}
+.chip{padding:5px 12px;border-radius:999px;border:1px solid var(--line);background:#fff;cursor:pointer;font-size:13px;font-weight:550}
+.chip.on{background:var(--fg);color:#fff;border-color:var(--fg)}
+/* pestañas de rama */
+.cabrama{display:flex;align-items:center;gap:20px;padding:20px 22px;margin-bottom:18px;border-radius:var(--r)}
+.cabrama.seo{background:var(--seo-bg)}.cabrama.sem{background:var(--sem-bg)}.cabrama.geo{background:var(--geo-bg)}
+.cabrama h1{margin:0;font-size:22px}.cabrama p{margin:2px 0 0;color:var(--muted)}
+.tabs{display:flex;gap:4px;border-bottom:1px solid var(--line);margin-bottom:18px}
+.tabs a{padding:9px 14px;text-decoration:none;color:var(--muted);font-weight:600;border-bottom:2px solid transparent;margin-bottom:-1px}
+.tabs a.on{color:var(--fg);border-color:var(--fg)}
+/* solucionar */
+.destino{display:grid;grid-template-columns:1fr 1fr;gap:12px}.destino.d3{grid-template-columns:repeat(3,minmax(0,1fr))}
+.exportar .botones{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+@media(max-width:1000px){.destino.d3{grid-template-columns:1fr}}
+.opc{display:flex;gap:10px;padding:14px 16px;border:1.5px solid var(--line);border-radius:var(--r);cursor:pointer;background:#fff}
+.opc.on{border-color:var(--fg)}.opc input{margin-top:3px}.opc small{color:var(--muted);display:block}
+.barra{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:16px 0}
+.grupo{margin-bottom:14px;overflow:hidden}
+.grupo>header{padding:11px 16px;background:#faf9f7;border-bottom:1px solid var(--line);display:flex;gap:10px;align-items:center}
+.fix{display:grid;grid-template-columns:26px 1fr;gap:6px 10px;padding:12px 16px;border-bottom:1px solid var(--line)}
+.fix:last-child{border-bottom:0}.fix.aplicada{background:#f6faf7}
+.fix .meta{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:13px}
+.fix .actual{font-size:13px;color:var(--muted);margin:4px 0;word-break:break-word}
+.fix textarea{width:100%;border:1px solid var(--line);border-radius:6px;padding:7px 9px;resize:vertical;min-height:38px;background:#fff}
+.fix textarea.code{font-family:ui-monospace,Menlo,monospace;font-size:12px;min-height:110px}
+.fix .nota{font-size:12.5px;color:var(--soft);margin-top:3px}
+.est{font-size:11.5px;font-weight:650;padding:1px 8px;border-radius:999px}
+.est.lista{background:#e7f1ec;color:var(--ok)}.est.datos{background:#fff1e0;color:var(--alta)}.est.hecha{background:var(--fg);color:#fff}
+.banner{padding:14px 18px;border-radius:var(--r);margin:14px 0;display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+.banner.ok{background:#e7f1ec}.banner.mal{background:#fdecea}
+/* formularios */
+label.f{display:block;font-weight:600;font-size:13px;margin:14px 0 5px}
+input.i,textarea.i{width:100%;padding:9px 11px;border:1px solid var(--line);border-radius:8px;background:#fff}
+input.i:focus,textarea.i:focus{outline:2px solid #c9d6ee;border-color:var(--sem)}
+.ayuda{font-size:12.5px;color:var(--muted);margin-top:4px}
+.fila{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.ramasel{display:flex;gap:10px}.ramasel label{display:flex;gap:7px;align-items:center;padding:8px 14px;border:1.5px solid var(--line);border-radius:8px;cursor:pointer;background:#fff;font-weight:600}
+.camp{display:grid;grid-template-columns:1fr 1.6fr auto auto;gap:8px;align-items:center;margin-bottom:8px}
+.progreso{height:8px;background:#ecebe7;border-radius:4px;overflow:hidden;margin:12px 0}.progreso i{display:block;height:100%;background:var(--fg);transition:width .3s}
+/* varios */
+.vacio{text-align:center;padding:50px 20px}.vacio h1{font-size:26px;margin:0 0 8px}
+.inicio{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:28px;text-align:left}
+.inicio .card{padding:24px}.inicio p{color:var(--muted)}
+.toast{position:fixed;bottom:22px;right:22px;background:var(--fg);color:#fff;padding:11px 16px;border-radius:8px;box-shadow:0 6px 20px rgba(0,0,0,.18);z-index:9;max-width:420px}
+.toast.mal{background:var(--crit)}
+.lista-inf .card{padding:16px 18px;display:flex;flex-direction:column;gap:10px}
+.lista-inf .botones{display:flex;gap:8px;flex-wrap:wrap}
+.check{display:flex;gap:10px;align-items:flex-start;padding:9px 0;border-bottom:1px solid var(--line)}.check:last-child{border-bottom:0}
+svg text{font-family:inherit}
+/* capas */
+.score2{padding:16px 18px;cursor:pointer;min-width:0;transition:transform .12s}.score2:hover{transform:translateY(-1px)}
+.score2 .capas{margin-top:14px}
+.capas{display:flex;flex-direction:column;gap:5px;margin:8px 0 2px;font-size:12.5px}
+.capa{display:grid;grid-template-columns:112px minmax(30px,1fr) 58px;gap:8px;align-items:center}.capa>span:first-child{white-space:nowrap;font-size:12px}
+.capa .b{height:6px;background:#ecebe7;border-radius:3px;overflow:hidden}.capa .b i{display:block;height:100%}
+.capa .v{text-align:right;font-variant-numeric:tabular-nums;font-weight:650}.capa .v.sd{color:var(--soft);font-weight:500}
+.cob{font-size:11.5px;font-weight:650;padding:1px 8px;border-radius:999px;background:#ecebe7;color:var(--muted)}
+.cob.prov{background:#fff1e0;color:var(--alta)}
+.anillo.solo{background:repeating-conic-gradient(#d9d7d1 0 2deg,#ecebe7 2deg 6deg)}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden;flex:none}
+.seg button{border:0;background:#fff;padding:6px 11px;cursor:pointer;font-size:13px;border-right:1px solid var(--line)}
+.seg button:last-child{border-right:0}.seg button:hover{background:var(--hover)}
+.seg button.on{background:var(--fg);color:#fff}.seg button.on.si{background:var(--ok)}.seg button.on.no{background:var(--crit)}.seg button.on.parcial{background:var(--media)}
+.preg{display:flex;gap:16px;align-items:flex-start;justify-content:space-between;padding:13px 18px;border-bottom:1px solid var(--line)}
+.preg:last-child{border-bottom:0}.preg b{font-weight:600}
+.medido{display:inline-block;margin-top:5px;font-size:12px;padding:2px 8px;border-radius:6px;background:var(--sem-bg);color:var(--sem)}
+.acc-card{display:grid;grid-template-columns:150px 1fr 230px;gap:14px;padding:14px 16px;border-bottom:1px solid var(--line)}
+.acc-card:last-child{border-bottom:0}.acc-card.cerrada{opacity:.62}
+.acc-card select,.acc-card input{width:100%;padding:6px 8px;border:1px solid var(--line);border-radius:6px;background:#fff;font-size:13px}
+.acc-card .lado{display:flex;flex-direction:column;gap:6px}
+.pill{font-size:11.5px;padding:1px 8px;border-radius:999px;background:#ecebe7;color:var(--muted);font-weight:600}
+.ok-v{font-size:11.5px;padding:1px 8px;border-radius:999px;background:#e7f1ec;color:var(--ok);font-weight:650}
+.barh{display:grid;grid-template-columns:180px 1fr 54px;gap:10px;align-items:center;margin:6px 0;font-size:13.5px}
+.barh .b{height:14px;background:#ecebe7;border-radius:4px;overflow:hidden}.barh .b i{display:block;height:100%;background:#b9b6ae}
+.barh.tu .b i{background:var(--geo)}.barh.tu{font-weight:700}
+.simul{background:#fff1e0;color:var(--alta);font-size:12px;font-weight:650;padding:2px 9px;border-radius:999px}
+.grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}.met{padding:12px 14px}.met b{display:block;font-size:20px}.met span{font-size:12px;color:var(--muted)}
+@media(max-width:1000px){.acc-card{grid-template-columns:1fr}.grid4{grid-template-columns:1fr 1fr}}
+.oculto{display:none}
+</style>
+</head>
+<body>
+<div class="app">
+  <aside>
+    <div class="logo">
+      <svg width="30" height="30" viewBox="0 0 32 32"><circle cx="10" cy="20" r="7" fill="#2f6f4f"/><circle cx="22" cy="20" r="7" fill="#2b5aa8" fill-opacity=".85"/><circle cx="16" cy="10" r="7" fill="#8a4fb0" fill-opacity=".85"/></svg>
+      <div><b>Tríada</b><small>SEO · SEM · GEO</small></div>
+    </div>
+    <nav class="nav" id="nav"></nav>
+    <div class="pie" id="pie"></div>
+  </aside>
+  <main id="vista"></main>
+</div>
+<div id="toast" class="toast oculto"></div>
+
+<script>
+"use strict";
+const RAMAS = {
+  seo: {nombre: "SEO", corto: "Orgánico", titulo: "Posicionamiento orgánico", desc: "Google y Bing: rastreo, contenido, estructura y datos estructurados."},
+  sem: {nombre: "SEM", corto: "Anuncios", titulo: "Publicidad de pago", desc: "Google Ads: medición, Consent Mode y calidad de las páginas de destino."},
+  geo: {nombre: "GEO", corto: "IA", titulo: "Buscadores con IA", desc: "ChatGPT, Perplexity, AI Overviews, Gemini, Claude: acceso, entidad de marca y contenido citable."},
+};
+const TIPO_FIX = {titulo: "Título", meta_description: "Meta descripción", h1: "Encabezado H1", canonical: "Canonical",
+  lang: "Idioma", jsonld: "Datos estructurados", jsonld_breadcrumb: "Migas de pan (schema)", meta_robots: "Meta robots",
+  archivo: "Archivo", snippet_head: "Fragmento en <head>"};
+const SEVS = ["critica", "alta", "media", "baja"];
+const REVISAR = "«REVISAR»";
+
+const S = {lista: [], actual: null, info: {}, sev: "todas", ediciones: {}, sel: {}, destino: "carpeta",
+           carpeta: "", ultimoResultado: null, trabajo: null, demo: null, ext: null, ajustes: null,
+           accRama: "todas", accEstado: "abiertas", monitorT: null};
+
+// ------------------------------------------------------------ utilidades
+const $ = s => document.querySelector(s);
+const esc = v => String(v ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const ruta = u => { try { const x = new URL(u); return x.pathname + x.search; } catch { return u || "—"; } };
+const fecha = iso => new Date(iso).toLocaleString("es-ES", {day:"2-digit", month:"2-digit", year:"numeric", hour:"2-digit", minute:"2-digit"});
+function toast(msg, mal) {
+  const t = $("#toast"); t.textContent = msg; t.className = "toast" + (mal ? " mal" : "");
+  clearTimeout(toast._t); toast._t = setTimeout(() => t.className = "toast oculto", mal ? 6000 : 3500);
+}
+async function api(p, opt = {}) {
+  const r = await fetch(p, {method: opt.method || (opt.body ? "POST" : "GET"),
+    headers: {"Content-Type": "application/json", "X-Triada": "1"},
+    body: opt.body ? JSON.stringify(opt.body) : undefined});
+  const d = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(d.error || ("Error " + r.status));
+  return d;
+}
+function color(v) { return v >= 80 ? "var(--ok)" : v >= 50 ? "var(--media)" : "var(--crit)"; }
+function anillo(r, v) { return `<div class="anillo" style="--v:${v};--c:var(--${r})"><span style="color:${color(v)}">${v}</span></div>`; }
+function tags(ramas, excepto) { return (ramas || []).filter(r => r !== excepto).sort().map(r => `<span class="tag t-${r}">${excepto ? "+" : ""}${r.toUpperCase()}</span>`).join(" "); }
+function previo(a) {
+  // análisis anterior de la misma web
+  const mismos = S.lista.filter(x => x.host === a.host);
+  const i = mismos.findIndex(x => x.id === a.id);
+  return i >= 0 ? mismos[i + 1] : null;
+}
+function aplicadasCarpeta(a) {
+  const s = new Set();
+  (a.aplicaciones || []).filter(x => !x.deshecha).forEach(x => x.aplicados.forEach(id => s.add(id)));
+  return s;
+}
+function aplicadasSubidas() { return new Set((S.subidas && S.subidas.aplicados) || []); }
+function aplicadas(a) { return new Set([...aplicadasCarpeta(a), ...aplicadasSubidas()]); }
+function aplicadasDestino(a) { return S.destino === "subidos" ? aplicadasSubidas() : aplicadasCarpeta(a); }
+function valorFix(f) { return S.ediciones[f.id] ?? f.valor_propuesto; }
+function fixLista(f) { return !valorFix(f).includes(REVISAR) && valorFix(f).trim() !== ""; }
+function tipoFix(t) { return t.startsWith("alt:") ? "Texto alternativo (alt)" : (TIPO_FIX[t] || t); }
+
+// ------------------------------------------------------------ carga
+async function cargarLista() { S.lista = await api("/api/analisis"); }
+async function abrir(id) {
+  if (!id) { S.actual = null; return; }
+  const nuevo = !S.actual || S.actual.id !== id;
+  if (S.actual && S.actual.id !== id) { S.ediciones = {}; S.sel = {}; S.ultimoResultado = null; }
+  S.actual = await api("/api/analisis/" + id);
+  S.subidas = await api("/api/subidas/" + id);
+  if (nuevo) S.destino = S.actual.carpeta_sitio ? "carpeta" : "subidos";
+  S.carpeta = S.actual.carpeta_sitio || S.carpeta || "";
+  S.ext = await api("/api/proyecto/" + S.actual.proyecto);
+  localStorage && (() => { try { localStorage.setItem("triada.actual", id); } catch {} })();
+}
+
+// ------------------------------------------------------------ navegación
+function pintarNav() {
+  const h = location.hash || "#/panel";
+  const a = S.actual;
+  const item = (href, txt, extra = "") => `<a href="${href}" class="${h.startsWith(href) ? "on" : ""}">${txt}${extra}</a>`;
+  let html = item("#/panel", "▦ Panel") + item("#/analizar", "＋ Nuevo análisis");
+  html += `<div class="sep">Vertientes</div>`;
+  const etiquetas = [];
+  for (const r of ["seo", "sem", "geo"]) {
+    const c = a && a.capas ? a.capas[r] : null;
+    const pts = a && a.ramas.includes(r) ? `<span class="pts" title="${c && c.total != null ? "Nota global" : "Solo en la web"}">${c && c.total != null ? c.total : a.puntuaciones[r] + "*"}</span>` : "";
+    html += `<a href="#/rama/${r}/analisis" class="${h.startsWith("#/rama/" + r) ? "on" : ""}"><span class="punto" style="background:var(--${r})"></span>${RAMAS[r].nombre} <span class="sub">${RAMAS[r].corto}</span>${pts}</a>`;
+  }
+  const abiertas = S.ext ? S.ext.acciones.filter(x => x.estado === "pendiente" || x.estado === "en_curso").length : 0;
+  html += `<div class="sep">Fuera de la web</div>` + item("#/acciones", "☑ Plan de acciones", abiertas ? `<span class="pts">${abiertas}</span>` : "")
+    + item("#/externo", "⇪ Datos externos") + item("#/ajustes", "⚙ Ajustes");
+  html += `<div class="sep">Resultados</div>` + item("#/informes", "⇩ Informes") + item("#/historial", "↺ Historial");
+  $("#nav").innerHTML = html;
+  $("#pie").innerHTML = `Datos guardados en<br>${esc(S.info.datos || "")}<br><br>Tríada ${esc(S.info.version || "")} · solo en tu ordenador`;
+}
+function cabecera(titulo, sub) {
+  const opciones = S.lista.map(x => `<option value="${x.id}" ${S.actual && x.id === S.actual.id ? "selected" : ""}>${esc(x.host)} · ${fecha(x.fecha)}${x.demo ? " (demo)" : ""}</option>`).join("");
+  return `<div class="top"><div><h1>${titulo}</h1>${sub ? `<div class="sub">${sub}</div>` : ""}</div><div class="esp"></div>
+    ${S.lista.length ? `<select class="sel" onchange="cambiar(this.value)">${opciones}</select>
+    <button class="btn" onclick="reanalizar()" title="Repite el análisis con la misma configuración">↻ Volver a analizar</button>` : ""}</div>`;
+}
+async function cambiar(id) { await abrir(id); render(); }
+
+async function render() {
+  pintarNav();
+  const h = (location.hash || "#/panel").slice(2).split("/");
+  const v = $("#vista");
+  if (h[0] === "analizar") return v.innerHTML = vistaAnalizar();
+  if (h[0] === "historial") return v.innerHTML = vistaHistorial();
+  if (h[0] === "ajustes" && !S.actual) return v.innerHTML = vistaAjustes();
+  if (!S.actual) return v.innerHTML = vistaBienvenida();
+  if (h[0] === "rama" && RAMAS[h[1]]) return v.innerHTML = vistaRama(h[1], h[2] || "analisis");
+  if (h[0] === "informes") return v.innerHTML = vistaInformes();
+  if (h[0] === "acciones") return v.innerHTML = vistaAcciones();
+  if (h[0] === "externo") return v.innerHTML = vistaExterno(h[1] || "cuestionario");
+  if (h[0] === "ajustes") return v.innerHTML = vistaAjustes();
+  v.innerHTML = vistaPanel();
+}
+window.addEventListener("hashchange", () => { render(); window.scrollTo(0, 0); });
+
+// ------------------------------------------------------------ bienvenida
+function vistaBienvenida() {
+  return `<div class="vacio">
+    <h1>Optimiza tu web para buscadores, anuncios e IA</h1>
+    <p class="sub" style="font-size:15px">Tríada analiza tu web en tres vertientes (SEO, SEM y GEO), te dice qué falla por orden de prioridad y lo soluciona por ti.</p>
+    <div class="inicio">
+      <div class="card"><h3>▶ Probar con la demostración</h3>
+        <p>Una web de ejemplo con errores puestos a propósito. Analízala, soluciona los problemas con un clic y comprueba cómo sube la puntuación. No toca nada real.</p>
+        <button class="btn pri" onclick="probarDemo()">Empezar la demostración</button></div>
+      <div class="card"><h3>＋ Analizar mi web</h3>
+        <p>Escribe la dirección de tu web. Puedes añadir tus campañas de Google Ads y los datos de tu empresa para un análisis más completo.</p>
+        <a class="btn" href="#/analizar">Configurar análisis</a></div>
+    </div></div>`;
+}
+async function probarDemo() {
+  try {
+    toast("Preparando la web de demostración…");
+    S.demo = await api("/api/demo", {body: {}});
+    lanzar(S.demo.config);
+  } catch (e) { toast(e.message, true); }
+}
+
+// ------------------------------------------------------------ panel
+function vistaPanel() {
+  const a = S.actual, ant = previo(a);
+  const ap = aplicadas(a);
+  let html = cabecera(esc(a.host), `${fecha(a.fecha)} · ${a.total_paginas} páginas · modo ${a.combinado ? "combinado" : "independiente"}${a.demo ? " · web de demostración" : ""}`);
+  if (a.demo && !(a.aplicaciones || []).length) html += `<div class="banner ok"><div><b>Demostración:</b> esta web tiene errores a propósito. Entra en una vertiente, pulsa <b>Solucionar</b> → <b>⚡ Solucionar automáticamente</b> y después <b>Volver a analizar</b> para ver la mejora.</div></div>`;
+  html += `<div class="grid3">`;
+  for (const r of a.ramas) {
+    const v = a.puntuaciones[r], n = a.issues.filter(i => i.ramas.includes(r)).length;
+    const fx = a.fixes.filter(f => f.ramas.includes(r)), listas = fx.filter(f => fixLista(f) && !ap.has(f.id)).length;
+    let d = "";
+    if (ant && ant.puntuaciones && ant.puntuaciones[r] != null) {
+      const diff = v - ant.puntuaciones[r];
+      d = diff ? `<span class="delta ${diff > 0 ? "up" : "down"}">${diff > 0 ? "▲" : "▼"} ${Math.abs(diff)} en la web</span>` : "";
+    }
+    const c = a.capas[r];
+    html += `<div class="card score2" onclick="location.hash='#/rama/${r}/analisis'">
+      <div style="display:flex;gap:14px;align-items:center">${anilloGlobal(r, c)}
+        <div><span class="tag t-${r}">${r.toUpperCase()}</span> <b>${RAMAS[r].titulo}</b><div style="margin-top:4px">${etiquetaGlobal(c)}</div></div></div>
+      ${capasHTML(r, c)}
+      <div class="sub" style="font-size:12.5px;margin-top:6px">${n} problemas en la web · ${listas} correcciones listas ${d}</div>
+      <div class="acc"><a class="btn peq" href="#/rama/${r}/analisis" onclick="event.stopPropagation()">Análisis</a>
+      <a class="btn peq ${r}" href="#/rama/${r}/solucionar" onclick="event.stopPropagation()">Solucionar</a>
+      ${c.interno ? "" : `<a class="btn peq" href="#/rama/${r}/fuera" onclick="event.stopPropagation()">Fuera de la web</a>`}</div></div>`;
+  }
+  html += `</div><p class="sub" style="font-size:12px;margin-top:8px">El SEO se evalúa con lo que hay en tu web. En SEM y GEO la nota global combina la web con señales externas y resultados reales; la cobertura indica qué parte de los factores tiene datos. Es un indicador interno para priorizar: no es una nota oficial de Google ni garantiza posiciones o citas.</p>`;
+
+  const evol = grafico(a.host);
+  html += `<div class="grid2" style="margin-top:8px"><div><h2>Prioridades</h2><div class="card tabla"><table>
+    <tr><th>Problema</th><th>Afecta a</th><th>Severidad</th></tr>
+    ${a.issues.slice(0, 9).map(i => `<tr><td>${esc(i.mensaje)}${i.urls.length ? ` <span class="sub">(${i.urls.length})</span>` : ""}</td><td style="white-space:nowrap">${tags(i.ramas)}</td><td><span class="sev s-${i.severidad}">${i.severidad}</span></td></tr>`).join("")}
+    </table></div></div>
+    <div>${resumenAcciones()}<h2>Evolución (en la web)</h2><div class="card pad">${evol}</div>
+    <h2>Resumen</h2><div class="card pad"><div class="grid2" style="gap:6px 16px">
+      ${SEVS.map(s => `<div><span class="sev s-${s}">${s}</span> <b style="float:right">${a.issues.filter(i => i.severidad === s).length}</b></div>`).join("")}
+      <div>Correcciones propuestas <b style="float:right">${a.fixes.length}</b></div>
+      <div>Ya aplicadas <b style="float:right">${ap.size}</b></div>
+    </div></div></div></div>`;
+  return html;
+}
+function grafico(host) {
+  const serie = S.lista.filter(x => x.host === host && x.puntuaciones).slice(0, 12).reverse();
+  if (serie.length < 2) return `<p class="sub" style="margin:0">Cuando vuelvas a analizar esta web verás aquí cómo evoluciona cada vertiente.</p>`;
+  const W = 460, H = 170, px = 34, py = 18;
+  const x = i => px + i * (W - px - 12) / (serie.length - 1), y = v => py + (100 - v) * (H - 2 * py) / 100;
+  let s = `<svg viewBox="0 0 ${W} ${H}" width="100%">`;
+  for (const v of [0, 50, 100]) s += `<line x1="${px}" x2="${W - 8}" y1="${y(v)}" y2="${y(v)}" stroke="#ecebe7"/><text x="${px - 8}" y="${y(v) + 4}" font-size="10" fill="#8b919b" text-anchor="end">${v}</text>`;
+  const etiquetas = [];
+  for (const r of ["seo", "sem", "geo"]) {
+    const pts = serie.map((p, i) => p.puntuaciones[r] != null && p.ramas.includes(r) ? [x(i), y(p.puntuaciones[r]), p.puntuaciones[r]] : null).filter(Boolean);
+    if (!pts.length) continue;
+    s += `<polyline fill="none" stroke="var(--${r})" stroke-width="2.2" points="${pts.map(p => p[0] + "," + p[1]).join(" ")}"/>`;
+    pts.forEach(p => s += `<circle cx="${p[0]}" cy="${p[1]}" r="3.2" fill="var(--${r})"><title>${r.toUpperCase()}: ${p[2]}</title></circle>`);
+    const u = pts[pts.length - 1]; etiquetas.push({r, x: u[0], y: u[1] - 7, v: u[2]});
+  }
+  etiquetas.sort((a, b) => a.y - b.y);
+  for (let i = 1; i < etiquetas.length; i++) if (etiquetas[i].y - etiquetas[i - 1].y < 12) etiquetas[i].y = etiquetas[i - 1].y + 12;
+  etiquetas.forEach(e => s += `<text x="${e.x - 6}" y="${e.y}" font-size="10.5" font-weight="700" fill="var(--${e.r})" text-anchor="end">${e.r.toUpperCase()} ${e.v}</text>`);
+  return s + `</svg><div class="sub" style="font-size:12px">Últimos ${serie.length} análisis de ${esc(host)}</div>`;
+}
+
+// ------------------------------------------------------------ rama
+function vistaRama(r, tab) {
+  const a = S.actual;
+  if (!a.ramas.includes(r)) return cabecera(RAMAS[r].titulo) + `<div class="card pad">Este análisis no incluye ${r.toUpperCase()}. <a href="#/analizar">Lanza uno nuevo</a> con esta vertiente activada.</div>`;
+  let html = cabecera(`${RAMAS[r].nombre} · ${RAMAS[r].titulo}`, esc(a.host));
+  const c = a.capas[r];
+  html += `<div class="cabrama ${r}">${anilloGlobal(r, c)}<div style="flex:1"><h1>${RAMAS[r].titulo}</h1><p>${RAMAS[r].desc}</p>
+      <div style="margin-top:6px">${etiquetaGlobal(c)}</div></div>${c.interno ? "" : `<div style="width:330px">${capasHTML(r, c)}</div>`}</div>
+    <div class="tabs"><a href="#/rama/${r}/analisis" class="${tab === "analisis" ? "on" : ""}">Análisis en la web</a>
+    <a href="#/rama/${r}/solucionar" class="${tab === "solucionar" ? "on" : ""}">Solucionar en la web</a>
+    ${c.interno ? "" : `<a href="#/rama/${r}/fuera" class="${tab === "fuera" ? "on" : ""}">Fuera de la web</a>`}</div>`;
+  if (tab === "fuera" && c.interno) tab = "analisis";
+  return html + (tab === "solucionar" ? vistaSolucionar(r) : tab === "fuera" ? vistaFuera(r) : vistaAnalisis(r));
+}
+
+function vistaAnalisis(r) {
+  const a = S.actual;
+  const todos = a.issues.filter(i => i.ramas.includes(r));
+  const lista = S.sev === "todas" ? todos : todos.filter(i => i.severidad === S.sev);
+  const fixPorCodigo = {};
+  a.fixes.filter(f => f.ramas.includes(r)).forEach(f => fixPorCodigo[f.codigo_issue] = (fixPorCodigo[f.codigo_issue] || 0) + 1);
+  let html = `<div class="chips">${["todas", ...SEVS].map(s => {
+      const n = s === "todas" ? todos.length : todos.filter(i => i.severidad === s).length;
+      return `<button class="chip ${S.sev === s ? "on" : ""}" onclick="S.sev='${s}';render()">${s === "todas" ? "Todas" : s[0].toUpperCase() + s.slice(1)} · ${n}</button>`;
+    }).join("")}</div>`;
+  if (!lista.length) html += `<div class="card pad si">Sin problemas${S.sev !== "todas" ? " de esta severidad" : ""} en esta vertiente.</div>`;
+  for (const i of lista) {
+    const nf = fixPorCodigo[i.codigo] || 0;
+    html += `<div class="card issue"><span class="sev s-${i.severidad}">${i.severidad}</span> ${tags(i.ramas, r)}
+      <h3>${esc(i.mensaje)}</h3><p>${esc(i.recomendacion)}</p>
+      ${i.nota_conflicto ? `<div class="conf">⚖ ${esc(i.nota_conflicto)}</div>` : ""}
+      ${i.urls.length ? `<details><summary>${i.urls.length} página(s) afectada(s)</summary><ul>${i.urls.slice(0, 50).map(u => `<li class="url">${esc(ruta(u))}</li>`).join("")}</ul></details>` : ""}
+      ${nf ? `<div style="margin-top:8px"><a class="btn peq" href="#/rama/${r}/solucionar">${nf} corrección(es) disponible(s) →</a></div>` : ""}</div>`;
+  }
+  html += `<h2>${{seo: "Páginas analizadas", sem: "Medición y páginas de destino", geo: "Acceso de la IA y señales de confianza"}[r]}</h2>`;
+  return html + ({seo: tablaSEO, sem: tablaSEM, geo: tablaGEO}[r])(a);
+}
+function tablaSEO(a) {
+  const lon = (t, min, max) => !t ? `<span class="no">falta</span>` : `<span class="${t.length < min || t.length > max ? "aviso" : "si"}">${t.length}</span>`;
+  return `<div class="card tabla"><table><tr><th>Página</th><th>Tipo</th><th>Título</th><th>Descripción</th><th class="num">Palabras</th><th>Indexable</th><th>Sitemap</th><th class="num">Enlaces entrantes</th></tr>
+    ${a.paginas.map(p => `<tr><td class="url" title="${esc(p.title)}">${esc(ruta(p.url))}</td><td>${esc(p.tipo)}</td><td>${lon(p.title, 20, 60)}</td><td>${lon(p.meta_description, 70, 160)}</td>
+    <td class="num ${p.palabras < 250 ? "aviso" : ""}">${p.palabras}</td><td>${p.indexable ? "<span class=si>sí</span>" : "<span class=aviso>no</span>"}</td>
+    <td>${p.en_sitemap ? "<span class=si>sí</span>" : "<span class=sub>no</span>"}</td><td class="num">${p.enlaces_entrantes}</td></tr>`).join("")}</table></div>
+    <p class="sub" style="font-size:12px">Título: 20-60 caracteres · Descripción: 70-160 caracteres · Contenido recomendado: 250+ palabras.</p>`;
+}
+function tablaSEM(a) {
+  const camp = ((a.config || {}).campanas || []);
+  const rel = a.paginas.filter(p => ["home", "landing", "producto", "servicio"].includes(p.tipo));
+  const sn = v => v ? "<span class=si>✓</span>" : "<span class=no>✗</span>";
+  return `${camp.length ? "" : `<div class="banner" style="background:#fff7e6"><div>No hay campañas configuradas. Añádelas en <a href="#/analizar">Nuevo análisis</a> para comprobar que cada landing coincide con sus palabras clave.</div></div>`}
+    <div class="card tabla"><table><tr><th>Página</th><th>Tipo</th><th>CTA</th><th>Formulario</th><th>GTM</th><th>GA4</th><th>Google Ads</th><th>Consent Mode</th><th class="num">Respuesta</th></tr>
+    ${rel.map(p => `<tr><td class="url">${esc(ruta(p.url))}</td><td>${esc(p.tipo)}</td><td>${sn(p.ctas)}</td><td>${sn(p.formulario)}</td><td>${sn(p.tracking.gtm)}</td><td>${sn(p.tracking.ga4)}</td><td>${sn(p.tracking.google_ads)}</td><td>${sn(p.tracking.consent_mode)}</td><td class="num">${p.tiempo_ms} ms</td></tr>`).join("")}</table></div>
+    ${camp.length ? `<h2>Campañas configuradas</h2><div class="card tabla"><table><tr><th>Landing</th><th>Palabras clave</th><th>Uso</th></tr>${camp.map(c => `<tr><td class="url">${esc(c.landing)}</td><td>${esc((c.palabras_clave || []).join(", "))}</td><td>${c.solo_anuncios ? "Solo anuncios" : "Anuncios y orgánico"}</td></tr>`).join("")}</table></div>` : ""}`;
+}
+function tablaGEO(a) {
+  const home = a.paginas.find(p => p.tipo === "home");
+  const org = home && home.schema.some(t => ["Organization", "LocalBusiness", "Corporation", "Store", "ProfessionalService"].includes(t));
+  const tipos = new Set(a.paginas.map(p => p.tipo));
+  const art = a.paginas.filter(p => p.tipo === "articulo");
+  const chk = (ok, txt, sub) => `<div class="check"><span class="${ok ? "si" : "no"}">${ok ? "✓" : "✗"}</span><div><b>${txt}</b><div class="sub">${sub}</div></div></div>`;
+  return `<div class="grid2"><div class="card tabla"><table><tr><th>Rastreador</th><th>Uso</th><th>Estado</th></tr>
+    ${Object.entries(a.bots).map(([b, ok]) => `<tr><td><b>${esc(b)}</b></td><td class="sub">${esc(a.uso_bots[b])}</td><td>${ok ? "<span class=si>Permitido</span>" : "<span class=no>Bloqueado</span>"}</td></tr>`).join("")}</table></div>
+    <div class="card pad">
+      ${chk(org, "Entidad de marca (schema Organization)", "Ayuda a buscadores e IA a identificar tu empresa.")}
+      ${chk(tipos.has("quienes_somos"), "Página «Quiénes somos»", "Historia, equipo y datos verificables.")}
+      ${chk(tipos.has("contacto"), "Página de contacto", "Señal básica de confianza.")}
+      ${chk(!art.length || art.every(p => p.autor), "Autoría en artículos", art.length ? `${art.filter(p => p.autor).length} de ${art.length} artículos firmados.` : "No se detectaron artículos.")}
+      ${chk(!a.paginas.some(p => p.depende_js), "Contenido visible sin JavaScript", "Muchos rastreadores de IA no ejecutan JavaScript.")}
+    </div></div>
+    <div class="banner" style="background:#f2eaf7;margin-top:16px"><div><b>Fuera de tu web:</b> la mayoría de las menciones de marca en respuestas de IA vienen de webs de terceros (reseñas, comparativas, prensa, foros). Consulta la lista de acciones en el informe exportable.</div></div>`;
+}
+
+// ------------------------------------------------------------ solucionar
+function vistaSolucionar(r) {
+  const a = S.actual, ap = aplicadasDestino(a);
+  const fx = a.fixes.filter(f => f.ramas.includes(r));
+  const listas = fx.filter(f => fixLista(f) && !ap.has(f.id));
+  const datos = fx.filter(f => !fixLista(f) && !ap.has(f.id));
+  const nsel = fx.filter(f => S.sel[f.id]).length;
+  let html = `<div class="destino d3">
+    <label class="opc ${S.destino === "subidos" ? "on" : ""}"><input type="radio" name="dest" ${S.destino === "subidos" ? "checked" : ""} onchange="S.destino='subidos';render()">
+      <div><b>Subir archivos HTML</b><small>Sube las páginas (.html o un .zip de la web), Tríada las corrige y te devuelve el HTML modificado. Tus originales no se tocan.</small></div></label>
+    <label class="opc ${S.destino === "carpeta" ? "on" : ""}"><input type="radio" name="dest" ${S.destino === "carpeta" ? "checked" : ""} onchange="S.destino='carpeta';render()">
+      <div><b>Aplicar en una carpeta</b><small>Modifica los archivos de tu web en tu ordenador (sitio estático o copia local), con copia de seguridad y opción de deshacer.</small>
+      ${S.destino === "carpeta" ? `<input class="i" style="margin-top:8px" placeholder="Carpeta de la web, p. ej. C:\\web\\public_html" value="${esc(S.carpeta)}" onchange="S.carpeta=this.value" onclick="event.stopPropagation()">` : ""}</div></label>
+    <label class="opc ${S.destino === "paquete" ? "on" : ""}"><input type="radio" name="dest" ${S.destino === "paquete" ? "checked" : ""} onchange="S.destino='paquete';render()">
+      <div><b>Descargar paquete de cambios</b><small>Un .zip con los archivos corregidos, la lista de cambios en Excel e instrucciones para WordPress, Shopify o tu desarrollador.</small></div></label>
+  </div>
+  ${S.destino === "subidos" ? panelSubidas() : ""}
+  ${panelExportar(r)}
+  <div class="barra">
+    <button class="btn ${r}" onclick="solucionar('${r}', true)" ${listas.length ? "" : "disabled"}>⚡ Solucionar automáticamente (${listas.length})</button>
+    <button class="btn" onclick="solucionar('${r}', false)" ${nsel ? "" : "disabled"}>Aplicar seleccionadas (${nsel})</button>
+    <span class="sub">${listas.length} listas · ${datos.length} necesitan datos · ${fx.filter(f => ap.has(f.id)).length} aplicadas</span>
+    <span style="flex:1"></span>
+    <button class="btn link" onclick="selTodas('${r}', true)">Seleccionar listas</button><button class="btn link" onclick="selTodas('${r}', false)">Quitar selección</button>
+  </div>`;
+  const res = S.ultimoResultado;
+  if (res && res.rama === r) {
+    if (res.descarga) html += `<div class="banner ok">📦 Paquete generado. <a class="btn peq" href="${res.descarga}">Descargar ${esc(res.nombre)}</a></div>`;
+    else html += `<div class="banner ${res.aplicados.length ? "ok" : "mal"}"><div><b>${res.aplicados.length} cambio(s) aplicados</b>${res.omitidos.length ? ` · ${res.omitidos.length} omitido(s)` : ""}.
+      ${res.omitidos.length ? `<details><summary>Ver omitidos</summary><ul>${res.omitidos.map(o => `<li>${esc(o.id)}: ${esc(o.motivo)}</li>`).join("")}</ul></details>` : ""}</div>
+      <span style="flex:1"></span>${!res.aplicados.length ? "" : res.destino === "subidos"
+        ? `<a class="btn pri" href="/api/subidas/${a.id}/descargar">⇩ Descargar HTML modificado</a>`
+        : `<button class="btn pri" onclick="reanalizar()">↻ Volver a analizar y ver la mejora</button>`}</div>`;
+  }
+  if (!fx.length) html += `<div class="card pad">No hay correcciones automáticas para esta vertiente. Revisa las recomendaciones en la pestaña Análisis.</div>`;
+  const grupos = {};
+  fx.forEach(f => (grupos[f.codigo_issue] = grupos[f.codigo_issue] || []).push(f));
+  for (const [cod, lista] of Object.entries(grupos)) {
+    const iss = a.issues.find(i => i.codigo === cod);
+    html += `<div class="card grupo"><header>${iss ? `<span class="sev s-${iss.severidad}">${iss.severidad}</span><b>${esc(iss.mensaje)}</b>` : `<b>${esc(cod)}</b>`}<span class="sub" style="margin-left:auto">${lista.length}</span></header>`;
+    for (const f of lista) {
+      const hecha = ap.has(f.id), ok = fixLista(f);
+      const code = f.valor_propuesto.length > 160 || f.valor_propuesto.includes("\n");
+      html += `<div class="fix ${hecha ? "aplicada" : ""}"><input type="checkbox" ${S.sel[f.id] ? "checked" : ""} ${hecha ? "disabled" : ""} onchange="S.sel['${f.id}']=this.checked;render()">
+        <div><div class="meta"><b>${esc(tipoFix(f.tipo))}</b><span class="url">${esc(ruta(f.url))}</span>
+          ${hecha ? `<span class="est hecha">Aplicada</span>` : ok ? `<span class="est lista">Lista</span>` : `<span class="est datos">Completa los «REVISAR»</span>`}<span class="sub">${f.id}</span></div>
+        ${f.valor_actual && !code ? `<div class="actual">Actual: ${esc(f.valor_actual)}</div>` : ""}
+        <textarea class="${code ? "code" : ""}" ${hecha ? "disabled" : ""} oninput="S.ediciones['${f.id}']=this.value" onchange="render()" rows="${code ? 8 : 1}">${esc(valorFix(f))}</textarea>
+        ${f.nota ? `<div class="nota">${esc(f.nota)}</div>` : ""}</div></div>`;
+    }
+    html += `</div>`;
+  }
+  const apps = (a.aplicaciones || []);
+  if (apps.length) {
+    html += `<h2>Cambios aplicados</h2><div class="card tabla"><table><tr><th>Fecha</th><th>Carpeta</th><th class="num">Cambios</th><th></th></tr>
+      ${apps.map(x => `<tr><td>${fecha(x.fecha)}</td><td class="url">${esc(x.carpeta)}</td><td class="num">${x.aplicados.length}</td>
+      <td>${x.deshecha ? `<span class="sub">Deshecho</span>` : `<button class="btn peq" onclick="deshacer('${x.id}')">↶ Deshacer</button>`}</td></tr>`).join("")}</table></div>`;
+  }
+  return html;
+}
+function selTodas(r, on) {
+  const ap = aplicadasDestino(S.actual);
+  S.actual.fixes.filter(f => f.ramas.includes(r)).forEach(f => S.sel[f.id] = on && fixLista(f) && !ap.has(f.id));
+  render();
+}
+async function solucionar(r, auto) {
+  const a = S.actual, ap = aplicadasDestino(a);
+  const ids = a.fixes.filter(f => f.ramas.includes(r) && !ap.has(f.id) && (auto ? fixLista(f) : S.sel[f.id])).map(f => f.id);
+  if (!ids.length) return toast("No hay correcciones que aplicar", true);
+  if (S.destino === "subidos" && !(S.subidas && S.subidas.archivos.length)) return toast("Primero sube los archivos HTML de tu web", true);
+  if (S.destino === "carpeta" && !S.carpeta.trim()) return toast("Indica la carpeta de tu web, o elige otra opción", true);
+  if (S.destino === "carpeta" && !a.demo && !confirm(`Se van a modificar los archivos de:\n${S.carpeta}\n\nSe guardará una copia de seguridad y podrás deshacerlo. ¿Continuar?`)) return;
+  const ediciones = {}; ids.forEach(id => { if (S.ediciones[id] != null) ediciones[id] = S.ediciones[id]; });
+  try {
+    const res = S.destino === "subidos"
+      ? await api(`/api/subidas/${a.id}/aplicar`, {body: {ids, ediciones}})
+      : await api("/api/solucionar", {body: {analisis: a.id, ids, ediciones, destino: S.destino, carpeta: S.carpeta}});
+    S.ultimoResultado = {...res, rama: r, destino: S.destino, aplicados: res.aplicados || [], omitidos: res.omitidos || []};
+    if (res.descarga) { location.href = res.descarga; toast("Paquete descargado"); }
+    else toast(`${res.aplicados.length} cambios aplicados`);
+    S.sel = {};
+    await abrir(a.id); render();
+  } catch (e) { toast(e.message, true); }
+}
+function panelSubidas() {
+  const a = S.actual, sb = S.subidas || {archivos: []};
+  const opciones = u => `<option value="">— Sin asignar —</option>` + a.paginas.map(p => `<option value="${esc(p.url)}" ${p.url === u ? "selected" : ""}>${esc(ruta(p.url))}</option>`).join("");
+  const sinAsignar = sb.archivos.filter(x => !x.url).length;
+  return `<div class="card pad" style="margin-top:12px">
+    <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap"><h3 style="flex:1">Archivos HTML subidos ${sb.archivos.length ? `<span class="sub">(${sb.archivos.length})</span>` : ""}</h3>
+      <label class="btn pri peq">＋ Subir archivos<input type="file" multiple accept=".html,.htm,.zip" style="display:none" onchange="subirHTML(this.files)"></label>
+      ${sb.archivos.length ? `<button class="btn peq" onclick="accionSubidas('restablecer','¿Volver a los archivos originales? Se pierden los cambios aplicados.')">↶ Restablecer originales</button>
+      <button class="btn peq link" onclick="accionSubidas('borrar','¿Quitar todos los archivos subidos?')">Quitar todos</button>` : ""}</div>
+    ${sb.archivos.length ? `${sinAsignar ? `<div class="ayuda" style="color:var(--alta)">${sinAsignar} archivo(s) sin página asignada: elige a qué página del análisis corresponden.</div>` : ""}
+      <div class="tabla" style="max-height:300px;margin-top:8px"><table><tr><th>Archivo</th><th>Página del análisis</th><th>Cómo se asignó</th><th class="num">Cambios</th><th></th></tr>
+      ${sb.archivos.map(x => `<tr><td class="url">${esc(x.nombre)}</td>
+        <td><select class="sel" style="max-width:260px" onchange="asignarHTML('${esc(x.nombre)}', this.value)">${opciones(x.url)}</select></td>
+        <td class="sub" style="font-size:12.5px">${esc(x.metodo || "—")}</td><td class="num">${x.cambios}</td>
+        <td><a class="btn peq link" href="/api/subidas/${a.id}/archivo?nombre=${encodeURIComponent(x.nombre)}">Descargar</a></td></tr>`).join("")}</table></div>`
+      : `<p class="sub" style="margin-bottom:0">Sube las páginas de tu web: archivos .html sueltos o un .zip con la web entera. Cada archivo se asigna solo a su página del análisis (por canonical, ruta, nombre, título o H1); puedes cambiarlo a mano.</p>`}
+  </div>`;
+}
+async function subirHTML(files) {
+  try {
+    const archivos = [];
+    for (const f of files) archivos.push({nombre: f.name, contenido: await new Promise((ok, mal) => { const r = new FileReader(); r.onload = () => ok(r.result); r.onerror = mal; r.readAsDataURL(f); })});
+    S.subidas = await api(`/api/subidas/${S.actual.id}/subir`, {body: {archivos}});
+    toast(`${S.subidas.archivos.length} archivo(s) listos`); render();
+  } catch (e) { toast(e.message, true); }
+}
+async function asignarHTML(nombre, url) {
+  try { S.subidas = await api(`/api/subidas/${S.actual.id}/asignar`, {body: {nombre, url: url || null}}); render(); }
+  catch (e) { toast(e.message, true); }
+}
+async function accionSubidas(accion, pregunta) {
+  if (!confirm(pregunta)) return;
+  try { S.subidas = await api(`/api/subidas/${S.actual.id}/${accion}`, {body: {}}); S.ultimoResultado = null; toast(accion === "borrar" ? "Archivos quitados" : "Originales restablecidos"); render(); }
+  catch (e) { toast(e.message, true); }
+}
+function panelExportar(r) {
+  const a = S.actual, sb = S.subidas || {modificados: 0};
+  const carpeta = (a.aplicaciones || []).some(x => !x.deshecha && x.aplicados.length);
+  return `<div class="card pad exportar" style="margin-top:12px"><div class="grid2">
+    <div><b>Exportar resultados del análisis (${r.toUpperCase()})</b><div class="botones">
+      <a class="btn peq" target="_blank" href="/api/exportar/${a.id}/html?imprimir=1&rama=${r}">PDF</a>
+      <a class="btn peq" href="/api/exportar/${a.id}/html?rama=${r}">HTML</a>
+      <a class="btn peq" href="/api/exportar/${a.id}/csv?rama=${r}">Excel (CSV)</a>
+      <a class="btn peq" href="/api/exportar/${a.id}/json?rama=${r}">JSON</a></div></div>
+    <div><b>Exportar HTML modificado</b><div class="botones">
+      ${sb.modificados ? `<a class="btn peq pri" href="/api/subidas/${a.id}/descargar">⇩ Archivos subidos (.zip)</a>` : ""}
+      ${carpeta ? `<a class="btn peq" href="/api/modificados/${a.id}">⇩ Archivos de la carpeta (.zip)</a>` : ""}
+      ${!sb.modificados && !carpeta ? `<span class="sub" style="font-size:12.5px">Disponible cuando apliques correcciones a archivos subidos o a una carpeta.</span>` : ""}</div></div>
+  </div></div>`;
+}
+async function deshacer(id) {
+  if (!confirm("¿Restaurar los archivos a como estaban antes de estos cambios?")) return;
+  try { await api("/api/deshacer", {body: {aplicacion: id}}); toast("Cambios deshechos"); S.ultimoResultado = null; await abrir(S.actual.id); render(); }
+  catch (e) { toast(e.message, true); }
+}
+
+// ------------------------------------------------------------ nuevo análisis
+function vistaAnalizar() {
+  const c = S.form || defaultForm();
+  S.form = c;
+  if (S.trabajo) {
+    const t = S.trabajo, pct = Math.min(95, Math.round(100 * t.paginas / Math.max(t.max, 1)) + 5);
+    return cabecera("Analizando…") + `<div class="card pad"><b>${esc(c.url)}</b><div class="progreso"><i style="width:${pct}%"></i></div>
+      <div class="sub">${t.paginas} páginas rastreadas. Las webs grandes pueden tardar unos minutos.</div></div>`;
+  }
+  const ramasHTML = ["seo", "sem", "geo"].map(r => `<label><input type="checkbox" ${c.ramas.includes(r) ? "checked" : ""} onchange="toggleRama('${r}',this.checked)"><span class="punto" style="background:var(--${r})"></span>${r.toUpperCase()}</label>`).join("");
+  const o = c.organizacion;
+  return cabecera("Nuevo análisis", "Configura qué analizar. Solo la dirección es obligatoria.") + `<div class="grid2" style="align-items:start">
+    <div class="card pad">
+      <label class="f" style="margin-top:0">Dirección de la web *</label><input class="i" id="f-url" placeholder="https://www.miempresa.com" value="${esc(c.url)}" oninput="S.form.url=this.value">
+      <div class="fila"><div><label class="f">Marca</label><input class="i" value="${esc(c.marca)}" oninput="S.form.marca=this.value" placeholder="Mi Empresa"></div>
+      <div><label class="f">Máximo de páginas</label><input class="i" type="number" min="1" max="2000" value="${c.max_paginas}" oninput="S.form.max_paginas=+this.value"></div></div>
+      <label class="f">Vertientes</label><div class="ramasel">${ramasHTML}</div>
+      <label class="f">Modo</label>
+      <div class="destino"><label class="opc ${c.combinado ? "on" : ""}"><input type="radio" name="modo" ${c.combinado ? "checked" : ""} onchange="S.form.combinado=true;render()"><div><b>Combinado</b> (recomendado)<small>Optimiza las vertientes a la vez y resuelve conflictos entre ellas.</small></div></label>
+      <label class="opc ${!c.combinado ? "on" : ""}"><input type="radio" name="modo" ${!c.combinado ? "checked" : ""} onchange="S.form.combinado=false;render()"><div><b>Independiente</b><small>Cada vertiente con sus propias reglas, aunque se contradigan.</small></div></label></div>
+      <label class="f">Carpeta de la web en tu ordenador (opcional)</label><input class="i" value="${esc(c.carpeta_sitio)}" oninput="S.form.carpeta_sitio=this.value" placeholder="C:\\web\\public_html">
+      <div class="ayuda">Si tu web es estática o tienes una copia local, Tríada podrá aplicar los cambios ahí directamente.</div>
+      <div class="barra" style="margin-top:22px"><button class="btn pri" onclick="lanzar(S.form)">Analizar</button><button class="btn" onclick="probarDemo()">Usar la web de demostración</button></div>
+    </div>
+    <div>
+      <div class="card pad"><h3>Campañas de Google Ads</h3><div class="ayuda" style="margin-bottom:10px">Indica la página de destino de cada campaña y sus palabras clave principales. Así se comprueba que el anuncio y la página dicen lo mismo.</div>
+        ${c.campanas.map((k, i) => `<div class="camp"><input class="i" placeholder="/landing" value="${esc(k.landing)}" oninput="S.form.campanas[${i}].landing=this.value">
+          <input class="i" placeholder="palabra clave 1, palabra clave 2" value="${esc(Array.isArray(k.palabras_clave) ? k.palabras_clave.join(", ") : k.palabras_clave)}" oninput="S.form.campanas[${i}].palabras_clave=this.value">
+          <label class="sub" title="Página creada solo para anuncios"><input type="checkbox" ${k.solo_anuncios ? "checked" : ""} onchange="S.form.campanas[${i}].solo_anuncios=this.checked"> solo anuncios</label>
+          <button class="btn link" onclick="S.form.campanas.splice(${i},1);render()">✕</button></div>`).join("")}
+        <button class="btn peq" onclick="S.form.campanas.push({landing:'',palabras_clave:'',solo_anuncios:true});render()">＋ Añadir campaña</button></div>
+      <div class="card pad" style="margin-top:16px"><h3>Datos de la empresa</h3><div class="ayuda">Se usan para generar la ficha de entidad (schema Organization), clave para GEO.</div>
+        <div class="fila"><div><label class="f">Nombre legal</label><input class="i" value="${esc(o.nombre_legal)}" oninput="S.form.organizacion.nombre_legal=this.value"></div>
+        <div><label class="f">Año de fundación</label><input class="i" value="${esc(o.fundacion)}" oninput="S.form.organizacion.fundacion=this.value"></div></div>
+        <label class="f">URL del logo</label><input class="i" value="${esc(o.logo)}" oninput="S.form.organizacion.logo=this.value">
+        <div class="fila"><div><label class="f">Teléfono</label><input class="i" value="${esc(o.telefono)}" oninput="S.form.organizacion.telefono=this.value"></div>
+        <div><label class="f">Email</label><input class="i" value="${esc(o.email)}" oninput="S.form.organizacion.email=this.value"></div></div>
+        <label class="f">Dirección</label><input class="i" value="${esc(o.direccion)}" oninput="S.form.organizacion.direccion=this.value">
+        <label class="f">Perfiles oficiales (uno por línea)</label><textarea class="i" rows="3" oninput="S.form.organizacion.redes=this.value.split('\\n').map(x=>x.trim()).filter(Boolean)" placeholder="https://www.linkedin.com/company/…">${esc((o.redes || []).join("\n"))}</textarea>
+      </div>
+    </div></div>`;
+}
+function defaultForm() {
+  const base = S.actual && S.actual.config && !S.actual.demo ? S.actual : null;
+  const c = base ? base.config : {};
+  return {url: c.url || "", marca: c.marca || "", max_paginas: c.max_paginas || 200,
+    ramas: base ? [...base.ramas] : ["seo", "sem", "geo"], combinado: base ? base.combinado : true,
+    carpeta_sitio: base ? base.carpeta_sitio || "" : "",
+    organizacion: Object.assign({nombre_legal: "", logo: "", telefono: "", email: "", direccion: "", fundacion: "", redes: []}, c.organizacion || {}),
+    campanas: (c.campanas || []).map(k => ({...k}))};
+}
+function toggleRama(r, on) { const s = new Set(S.form.ramas); on ? s.add(r) : s.delete(r); S.form.ramas = ["seo", "sem", "geo"].filter(x => s.has(x)); }
+function configDeAnalisis(a) {
+  return {...a.config, ramas: a.ramas, combinado: a.combinado, carpeta_sitio: a.carpeta_sitio, demo: a.demo};
+}
+async function reanalizar() { if (S.actual) lanzar(configDeAnalisis(S.actual)); }
+async function lanzar(cfg) {
+  if (!cfg.url || !cfg.url.trim()) return toast("Escribe la dirección de la web", true);
+  if (!cfg.ramas || !cfg.ramas.length) return toast("Elige al menos una vertiente", true);
+  S.form = JSON.parse(JSON.stringify(cfg));
+  try {
+    const {trabajo} = await api("/api/analizar", {body: cfg});
+    S.trabajo = {paginas: 0, max: cfg.max_paginas || 200};
+    location.hash = "#/analizar"; render();
+    while (true) {
+      await new Promise(r => setTimeout(r, 600));
+      const t = await api("/api/trabajo/" + trabajo);
+      S.trabajo = t; if (location.hash === "#/analizar") render();
+      if (t.estado === "error") { S.trabajo = null; render(); return toast(t.error, true); }
+      if (t.estado === "terminado") {
+        S.trabajo = null; S.form = null; S.ultimoResultado = null; S.ediciones = {}; S.sel = {};
+        await cargarLista(); await abrir(t.analisis);
+        toast("Análisis terminado"); location.hash = "#/panel"; render(); return;
+      }
+    }
+  } catch (e) { S.trabajo = null; render(); toast(e.message, true); }
+}
+
+// ------------------------------------------------------------ informes
+function vistaInformes() {
+  const a = S.actual, id = a.id;
+  const bloque = (titulo, desc, rama) => {
+    const q = rama ? `?rama=${rama}` : "", q2 = rama ? `&rama=${rama}` : "";
+    return `<div class="card">${rama ? `<div><span class="tag t-${rama}">${rama.toUpperCase()}</span></div>` : ""}<h3>${titulo}</h3><div class="sub">${desc}</div>
+      <div class="botones"><a class="btn peq" target="_blank" href="/api/exportar/${id}/html?ver=1${q2}">Ver</a>
+      <a class="btn peq" target="_blank" href="/api/exportar/${id}/html?imprimir=1${q2}">PDF</a>
+      <a class="btn peq" href="/api/exportar/${id}/html${q}">HTML</a>
+      <a class="btn peq" href="/api/exportar/${id}/csv${q}">Excel (CSV)</a>
+      <a class="btn peq" href="/api/exportar/${id}/json${q}">JSON</a></div></div>`;
+  };
+  return cabecera("Informes", `${esc(a.host)} · ${fecha(a.fecha)}`) + `<div class="lista-inf grid2">
+    ${bloque("Informe completo", "Nota por capas, prioridades, problemas de todas las vertientes, correcciones y plan de acciones fuera de la web.")}
+    <div class="card"><h3>Todo el análisis</h3><div class="sub">Carpeta completa: informes de cada vertiente, correcciones, robots.txt, sitemap, JSON-LD y fragmentos listos para usar.</div>
+      <div class="botones"><a class="btn peq pri" href="/api/exportar/${id}/zip">Descargar ZIP</a></div></div>
+    <div class="card"><h3>HTML modificado</h3><div class="sub">Las páginas con las correcciones aplicadas, listas para subir a tu web.</div>
+      <div class="botones">${S.subidas && S.subidas.modificados ? `<a class="btn peq pri" href="/api/subidas/${id}/descargar">Archivos subidos (.zip)</a>` : ""}
+      ${(a.aplicaciones || []).some(x => !x.deshecha && x.aplicados.length) ? `<a class="btn peq" href="/api/modificados/${id}">Archivos de la carpeta (.zip)</a>` : ""}
+      ${!(S.subidas && S.subidas.modificados) && !(a.aplicaciones || []).some(x => !x.deshecha && x.aplicados.length) ? `<span class="sub" style="font-size:12.5px">Aplica correcciones en una vertiente (Solucionar) para poder descargarlo.</span>` : ""}</div></div>
+    <div class="card"><h3>Plan de acciones fuera de la web</h3><div class="sub">Todas las acciones con su estado, responsable, fecha y evidencia. Se abre con Excel o Google Sheets.</div>
+      <div class="botones"><a class="btn peq" href="/api/proyecto/${a.proyecto}/acciones.csv">Excel (CSV)</a></div></div>
+    ${a.ramas.map(r => bloque(`Informe ${RAMAS[r].titulo}`, RAMAS[r].desc, r)).join("")}
+  </div><p class="sub" style="font-size:12.5px">«PDF» abre el informe y el diálogo de impresión: elige «Guardar como PDF». El CSV se abre con Excel o Google Sheets.</p>`;
+}
+
+// ------------------------------------------------------------ historial
+function vistaHistorial() {
+  if (!S.lista.length) return cabecera("Historial") + `<div class="card pad">Todavía no hay análisis. <a href="#/analizar">Lanza el primero</a>.</div>`;
+  const p = (x, r) => x.puntuaciones && x.ramas.includes(r) ? `<b style="color:${color(x.puntuaciones[r])}">${x.puntuaciones[r]}</b>` : `<span class="sub">—</span>`;
+  return cabecera("Historial", `${S.lista.length} análisis guardados`) + `<div class="card tabla"><table>
+    <tr><th>Fecha</th><th>Web</th><th>Modo</th><th class="num">Páginas</th><th>SEO</th><th>SEM</th><th>GEO</th><th class="num">Problemas</th><th></th></tr>
+    ${S.lista.map(x => `<tr><td>${fecha(x.fecha)}</td><td><b>${esc(x.host)}</b>${x.demo ? ` <span class="sub">demo</span>` : ""}</td><td>${x.combinado ? "combinado" : "independiente"}</td>
+      <td class="num">${x.total_paginas}</td><td>${p(x, "seo")}</td><td>${p(x, "sem")}</td><td>${p(x, "geo")}</td><td class="num">${x.problemas}</td>
+      <td style="white-space:nowrap"><button class="btn peq" onclick="cambiar('${x.id}').then(()=>location.hash='#/panel')">Abrir</button>
+      <button class="btn peq link" onclick="borrar('${x.id}')">Borrar</button></td></tr>`).join("")}</table></div>`;
+}
+async function borrar(id) {
+  if (!confirm("¿Borrar este análisis? No afecta a tu web.")) return;
+  try {
+    await api("/api/analisis/" + id, {method: "DELETE"});
+    await cargarLista();
+    if (S.actual && S.actual.id === id) await abrir(S.lista[0] && S.lista[0].id);
+    render();
+  } catch (e) { toast(e.message, true); }
+}
+
+// ------------------------------------------------------------ capas (dentro / fuera de la web)
+const pc = v => v == null ? "—" : String(v).replace(".", ",") + " %";
+const NOMBRE_MOTOR = {gemini: "Gemini (Google)", openai: "ChatGPT (OpenAI)", perplexity: "Perplexity", simulado: "Simulado (demo)"};
+const VALOR_TXT = {si: "Sí", parcial: "En parte", no: "No", na: "No aplica"};
+const ORIGEN_TXT = {medido: "Medido", importado: "Importado", ejemplo: "Dato de ejemplo", declarado: "Declarado"};
+function anilloGlobal(r, c) {
+  if (c.total != null) return anillo(r, c.total);
+  return `<div class="anillo solo" title="Solo en la web: faltan datos externos"><span style="color:var(--muted);font-size:20px">${c.web ?? "—"}<small style="font-size:11px">*</small></span></div>`;
+}
+function etiquetaGlobal(c) {
+  if (c.interno) return `<span class="cob">Interno · se mide en la web</span>`;
+  if (c.total == null) return `<span class="cob prov">Solo en la web · faltan datos externos</span>`;
+  return `<span class="cob ${c.provisional ? "prov" : ""}">${c.provisional ? "Provisional · " : ""}cobertura ${c.cobertura} %</span>`;
+}
+function capaFila(r, nombre, valor, sufijo) {
+  const sd = valor == null;
+  return `<div class="capa"><span class="sub">${nombre}</span><div class="b"><i style="width:${sd ? 0 : valor}%;background:var(--${r})"></i></div>
+    <span class="v ${sd ? "sd" : ""}">${sd ? "sin datos" : valor}${sufijo || ""}</span></div>`;
+}
+function capasHTML(r, c) {
+  if (c.interno) return `<div class="capas">${capaFila(r, "En la web", c.web)}</div>`;
+  return `<div class="capas">${capaFila(r, "En la web", c.web)}
+    ${capaFila(r, "Señales externas", c.externo.valor)}
+    ${capaFila(r, "Resultado real", c.resultado.valor)}</div>`;
+}
+function resumenAcciones() {
+  if (!S.ext) return "";
+  const ab = S.ext.acciones.filter(x => x.estado === "pendiente" || x.estado === "en_curso");
+  const altas = ab.filter(x => x.prioridad === "alta").length;
+  const ver = S.ext.acciones.filter(x => x.verificada).length;
+  return `<h2>Fuera de la web</h2><div class="card pad" style="display:flex;gap:16px;align-items:center;flex-wrap:wrap">
+    <div style="flex:1;min-width:200px"><b style="font-size:22px">${ab.length}</b> acciones abiertas · <span class="s-alta sev">${altas} alta${altas === 1 ? "" : "s"}</span>
+    ${ver ? `<br><span class="ok-v">✓ ${ver} verificada${ver === 1 ? "" : "s"} automáticamente</span>` : ""}
+    <div class="sub" style="font-size:12.5px;margin-top:4px">Reseñas, menciones, Google Ads, Search Console y presencia en la IA.</div></div>
+    <a class="btn pri" href="#/acciones">Ver plan</a><a class="btn" href="#/externo">Añadir datos</a></div>`;
+}
+async function refrescar() { if (S.actual) await abrir(S.actual.id); render(); }
+async function postExt(ruta, cuerpo, msg) {
+  try {
+    S.ext = await api(`/api/proyecto/${S.actual.proyecto}/${ruta}`, {body: cuerpo || {}});
+    if (msg) toast(msg);
+    await refrescar();
+  } catch (e) { toast(e.message, true); }
+}
+
+// ------------------------------------------------------------ pestaña "Fuera de la web" de cada rama
+function vistaFuera(r) {
+  const c = S.actual.capas[r], e = S.ext;
+  const w = Math.round(c.peso_web * 100);
+  const preguntas = e.cuestionario.preguntas.filter(p => p.ramas.includes(r));
+  const res = c.resultado;
+  const sinRes = {seo: ["Importa el informe de Rendimiento de Search Console", "#/externo/importar"],
+                  sem: ["Importa los informes de palabras clave y términos de búsqueda de Google Ads", "#/externo/importar"],
+                  geo: ["Ejecuta el monitor de IA", "#/externo/monitor"]}[r];
+  const acc = e.acciones.filter(a => a.ramas.includes(r));
+  return `<div class="banner" style="background:var(--${r}-bg)"><div>En ${r.toUpperCase()} la nota global pesa <b>${w} %</b> lo que se mide en la web y <b>${100 - w} %</b> lo de fuera
+    (media de señales externas y resultado real). Puedes cambiar los pesos en <a href="#/ajustes">Ajustes</a>.</div></div>
+    <div class="grid2" style="align-items:start">
+    <div><h2>Señales externas ${c.externo.valor != null ? `· ${c.externo.valor}` : ""} <span class="sub">(${Math.round(c.externo.cobertura * 100)} % con datos)</span></h2>
+      <div class="card">${preguntas.map(p => pregHTML(p)).join("")}</div></div>
+    <div><h2>Resultado real ${res.valor != null ? `· ${res.valor}` : ""}</h2>
+      ${res.metricas.length ? `<div class="card pad"><div class="sub" style="margin-bottom:8px">${esc(res.fuente || "")}</div>
+        ${res.metricas.map(m => `<div class="check"><span style="flex:1">${esc(m.nombre)}</span><b>${m.valor ?? "—"}</b></div>`).join("")}</div>`
+        : `<div class="card pad"><p class="sub" style="margin-top:0">Sin datos de resultado real.</p><a class="btn" href="${sinRes[1]}">${sinRes[0]}</a></div>`}
+      <h2>Acciones de ${r.toUpperCase()} <span class="sub">(${acc.filter(a => a.estado === "pendiente" || a.estado === "en_curso").length} abiertas)</span></h2>
+      <div class="card">${acc.length ? acc.slice(0, 8).map(a => `<div class="check"><span class="sev s-${a.prioridad}" style="width:44px">${a.prioridad}</span>
+        <div style="flex:1"><b>${esc(a.accion)}</b><div class="sub" style="font-size:12.5px">${esc(a.porque)}</div></div>
+        <span class="pill">${estadoTxt(a)}</span></div>`).join("") : `<div class="pad sub">Sin acciones todavía. Responde las señales externas o añade datos.</div>`}
+      </div><p><a href="#/acciones">Ver el plan completo →</a></p></div></div>`;
+}
+function pregHTML(p) {
+  const e = S.ext, dec = e.cuestionario.declarados[p.id], val = e.cuestionario.valores[p.id];
+  const opciones = ["si", "parcial", "no"].concat(p.admite_na ? ["na"] : []);
+  const medido = val && val.origen !== "declarado";
+  return `<div class="preg"><div><b>${esc(p.pregunta)}</b> ${tags(p.ramas)}<div class="sub" style="font-size:12.5px">${esc(p.ayuda)}</div>
+    ${medido ? `<span class="medido">${ORIGEN_TXT[val.origen] || val.origen}: <b>${VALOR_TXT[val.valor]}</b> · ${esc(val.detalle)}</span>` : ""}</div>
+    <div class="seg" title="${medido ? "El dato medido tiene prioridad sobre tu respuesta" : ""}">${opciones.map(o => `<button class="${dec === o ? "on " + o : ""}" onclick="responder('${p.id}','${dec === o ? "" : o}')">${VALOR_TXT[o]}</button>`).join("")}</div></div>`;
+}
+function responder(id, valor) { postExt("cuestionario", {id, valor: valor || null}); }
+function estadoTxt(a) { return ({pendiente: "Pendiente", en_curso: "En curso", hecho: "Hecho", descartada: "Descartada"}[a.estado]) + (a.verificada ? " ✓" : ""); }
+
+// ------------------------------------------------------------ plan de acciones
+function vistaAcciones() {
+  const e = S.ext;
+  let lista = e.acciones;
+  if (S.accRama !== "todas") lista = lista.filter(a => a.ramas.includes(S.accRama));
+  const filtro = {abiertas: a => a.estado === "pendiente" || a.estado === "en_curso", hechas: a => a.estado === "hecho",
+                  descartadas: a => a.estado === "descartada", todas: () => true}[S.accEstado];
+  const vis = lista.filter(filtro);
+  const ab = e.acciones.filter(a => a.estado === "pendiente" || a.estado === "en_curso");
+  const sinResp = e.cuestionario.preguntas.filter(p => !e.cuestionario.valores[p.id]).length;
+  let html = cabecera("Plan de acciones fuera de la web", `${ab.length} abiertas · ${e.acciones.filter(a => a.estado === "hecho").length} hechas`);
+  if (sinResp) html += `<div class="banner" style="background:#fff7e6"><div>Hay <b>${sinResp} señales externas sin responder</b>. Cuantos más datos, más completo será el plan.</div><span style="flex:1"></span><a class="btn" href="#/externo/cuestionario">Completar cuestionario</a></div>`;
+  html += `<div class="barra"><div class="chips" style="margin:0">${["todas", "sem", "geo"].map(r => `<button class="chip ${S.accRama === r ? "on" : ""}" onclick="S.accRama='${r}';render()">${r === "todas" ? "Todas" : r.toUpperCase()}</button>`).join("")}</div>
+    <select class="sel" onchange="S.accEstado=this.value;render()">${[["abiertas", "Abiertas"], ["hechas", "Hechas"], ["descartadas", "Descartadas"], ["todas", "Todas"]].map(([v, t]) => `<option value="${v}" ${S.accEstado === v ? "selected" : ""}>${t}</option>`).join("")}</select>
+    <span style="flex:1"></span><a class="btn" href="/api/proyecto/${S.actual.proyecto}/acciones.csv">⇩ Exportar a Excel (CSV)</a></div>`;
+  if (!vis.length) return html + `<div class="card pad">No hay acciones con este filtro.${e.acciones.length ? "" : ` Añade datos en <a href="#/externo">Datos externos</a> para generar el plan.`}</div>`;
+  return html + `<div class="card">${vis.map(accCard).join("")}</div>
+    <p class="sub" style="font-size:12.5px">Las acciones se generan a partir de tus datos. Cuando un dato nuevo demuestra que una acción está resuelta, se marca como hecha y <b>verificada</b> automáticamente.</p>`;
+}
+function accCard(a) {
+  const cerrada = a.estado === "hecho" || a.estado === "descartada";
+  const id = esc(a.id);
+  return `<div class="acc-card ${cerrada ? "cerrada" : ""}">
+    <div class="lado"><select onchange="guardarAccion('${id}','estado',this.value)">${["pendiente", "en_curso", "hecho", "descartada"].map(s => `<option value="${s}" ${a.estado === s ? "selected" : ""}>${{pendiente: "Pendiente", en_curso: "En curso", hecho: "Hecho", descartada: "Descartada"}[s]}</option>`).join("")}</select>
+      ${a.verificada ? `<span class="ok-v">✓ Verificada</span>` : ""}
+      <div><span class="sev s-${a.prioridad}">${a.prioridad}</span> <span class="pill">esfuerzo ${a.esfuerzo}</span></div></div>
+    <div><div>${tags(a.ramas)}</div><b style="font-size:15px">${esc(a.accion)}</b>
+      <p style="margin:4px 0;color:#3a3e45">${esc(a.porque)}</p>
+      ${a.detalle && a.detalle.length ? `<details><summary>Detalle</summary><ul>${a.detalle.map(d => `<li>${esc(d)}</li>`).join("")}</ul></details>` : ""}
+      <div class="sub" style="font-size:12px;margin-top:4px">Verificación: ${esc(a.verificacion)}</div></div>
+    <div class="lado"><input placeholder="Responsable" value="${esc(a.responsable || "")}" onchange="guardarAccion('${id}','responsable',this.value)">
+      <input type="date" value="${esc(a.fecha || "")}" onchange="guardarAccion('${id}','fecha',this.value)" title="Fecha límite">
+      <input placeholder="Evidencia (URL o nota)" value="${esc(a.evidencia || "")}" onchange="guardarAccion('${id}','evidencia',this.value)"></div></div>`;
+}
+async function guardarAccion(id, campo, valor) {
+  try {
+    S.ext = await api(`/api/proyecto/${S.actual.proyecto}/accion`, {body: {id, [campo]: valor}});
+    if (campo === "estado") render(); else pintarNav();
+  } catch (e) { toast(e.message, true); }
+}
+
+// ------------------------------------------------------------ datos externos
+function vistaExterno(tab) {
+  const tabs = [["cuestionario", "Cuestionario"], ["importar", "Importar informes"], ["monitor", "Monitor de IA"], ["resenas", "Reseñas y entidad"]];
+  let html = cabecera("Datos de fuera de la web", "Lo que no se ve en tu web: señales externas y resultados reales. Todo se guarda solo en tu ordenador.");
+  if (S.actual.demo) html += `<div class="banner" style="background:#fff1e0"><div><b>Demostración:</b> estos datos son de ejemplo (informes CSV de muestra, respuestas de IA simuladas y reseñas ficticias). Con tu web, los datos serán reales.</div></div>`;
+  html += `<div class="tabs">${tabs.map(([k, t]) => `<a href="#/externo/${k}" class="${tab === k ? "on" : ""}">${t}</a>`).join("")}</div>`;
+  return html + ({cuestionario: extCuestionario, importar: extImportar, monitor: extMonitor, resenas: extResenas}[tab] || extCuestionario)();
+}
+function extCuestionario() {
+  const e = S.ext;
+  return ["sem", "geo"].map(r => {
+    const ps = e.cuestionario.preguntas.filter(p => p.ramas[0] === r);
+    return `<h2><span class="tag t-${r}">${r.toUpperCase()}</span> ${RAMAS[r].titulo}</h2><div class="card">${ps.map(pregHTML).join("")}</div>`;
+  }).join("") + `<p class="sub" style="font-size:12.5px">El SEO no tiene preguntas: se evalúa solo con lo que hay en la web. «En parte» cuenta la mitad. «No aplica» no cuenta. Las preguntas sin responder se consideran sin datos y bajan la cobertura, no la nota.</p>`;
+}
+function extImportar() {
+  const e = S.ext, ads = e.ads, sc = e.search_console;
+  const fila = (fuente, tipo, titulo, res) => {
+    const d = (fuente === "ads" ? ads : sc)[tipo];
+    return `<tr><td><b>${titulo}</b></td><td>${d ? `<span class="si">✓</span> ${esc(d.archivo)}<div class="sub" style="font-size:12px">${fecha(d.fecha)}</div>` : `<span class="sub">No importado</span>`}</td>
+      <td>${d ? res(d) : ""}</td><td>${d ? `<button class="btn peq link" onclick="postExt('importacion/borrar',{fuente:'${fuente}',tipo:'${tipo}'},'Informe quitado')">Quitar</button>` : ""}</td></tr>`;
+  };
+  return `<div class="grid2" style="align-items:start"><div>
+    <div class="card pad" style="text-align:center;border-style:dashed;padding:28px">
+      <h3>Sube tus informes</h3><p class="sub">CSV de Google Ads, o el informe de Enlaces de Search Console. Se reconocen solos, en español o en inglés.</p>
+      <label class="btn pri">Elegir archivos<input type="file" multiple accept=".csv,.tsv,.zip,.txt" style="display:none" onchange="subir(this.files)"></label></div>
+    <h2>Informes importados</h2><div class="card tabla"><table><tr><th>Informe</th><th>Archivo</th><th>Resumen</th><th></th></tr>
+      ${fila("ads", "palabras_clave", "Google Ads · Palabras clave", d => `NC medio <b>${d.qs_medio ?? "—"}</b> · ${d.filas} palabras · ${d.coste} €`)}
+      ${fila("ads", "terminos", "Google Ads · Términos de búsqueda", d => `<b>${pc(d.pct_desperdicio)}</b> del gasto sin conversión`)}
+      ${fila("search_console", "enlaces", "Search Console · Enlaces (para GEO)", d => `<b>${d.dominios}</b> dominios enlazan`)}
+    </table></div></div>
+    <div><h2 style="margin-top:0">Dónde descargar cada informe</h2><div class="card pad" style="font-size:13.5px">
+      <p><b>Google Ads · Palabras clave</b><br>En la tabla de palabras clave de búsqueda, añade la columna «Nivel de calidad» y descarga en CSV. Elige un periodo de al menos 30 días.</p>
+      <p><b>Google Ads · Términos de búsqueda</b><br>En «Términos de búsqueda», descarga la tabla en CSV con las columnas de coste y conversiones.</p>
+      <p style="margin-bottom:0"><b>Search Console · Enlaces</b><br>En «Enlaces», abre «Sitios web con más enlaces» y exporta la tabla.</p>
+      <p class="sub" style="font-size:12.5px;margin-bottom:0">Cuando tengas acceso a la API de Google Ads, esto se podrá hacer automáticamente.</p></div></div></div>`;
+}
+async function subir(files) {
+  for (const f of files) {
+    try {
+      const contenido = await new Promise((ok, mal) => { const r = new FileReader(); r.onload = () => ok(r.result); r.onerror = mal; r.readAsDataURL(f); });
+      const res = await api(`/api/proyecto/${S.actual.proyecto}/importar`, {body: {nombre: f.name, contenido}});
+      toast(`${f.name}: importado (${res.importados.map(i => i.tipo.replace("_", " ")).join(", ")})`);
+    } catch (e) { toast(`${f.name}: ${e.message}`, true); }
+  }
+  await refrescar();
+}
+
+function extMonitor() {
+  const e = S.ext, m = e.monitor, aj = e.ajustes;
+  if (!S.mon || S.mon._p !== e.proyecto) {
+    S.mon = {_p: e.proyecto, marca: e.perfil.marca || "", alias: (e.perfil.alias || []).join(", "), dominio: e.perfil.dominio || "",
+             ciudad: e.perfil.ciudad || "", preguntas: (m.config.preguntas || []).join("\n"),
+             competidores: (m.config.competidores || []).map(c => ({...c})), motores: [...(m.config.motores || [])],
+             repeticiones: m.config.repeticiones || 2};
+  }
+  const M = S.mon, demo = S.actual.demo;
+  const nPreg = M.preguntas.split("\n").filter(x => x.trim()).length;
+  const motoresOk = demo ? ["simulado"] : M.motores.filter(x => aj.claves[x]);
+  const llamadas = nPreg * motoresOk.length * M.repeticiones;
+  let html = `<div class="grid2" style="align-items:start"><div class="card pad">
+    <h3>Qué preguntar y a quién</h3>
+    <div class="fila"><div><label class="f">Tu marca</label><input class="i" value="${esc(M.marca)}" oninput="S.mon.marca=this.value"></div>
+    <div><label class="f">Otros nombres (separados por comas)</label><input class="i" value="${esc(M.alias)}" oninput="S.mon.alias=this.value"></div></div>
+    <div class="fila"><div><label class="f">Tu dominio</label><input class="i" value="${esc(M.dominio)}" oninput="S.mon.dominio=this.value" placeholder="miempresa.com"></div>
+    <div><label class="f">Ciudad o zona</label><input class="i" value="${esc(M.ciudad)}" oninput="S.mon.ciudad=this.value"></div></div>
+    <label class="f">Preguntas de tus clientes (una por línea)</label>
+    <textarea class="i" rows="6" oninput="S.mon.preguntas=this.value" placeholder="mejor empresa de reformas en Madrid">${esc(M.preguntas)}</textarea>
+    <div class="ayuda">Escribe como pregunta un cliente que aún no te conoce, sin nombrar tu marca.</div>
+    <label class="f">Competidores</label>
+    ${M.competidores.map((c, i) => `<div class="camp" style="grid-template-columns:1fr 1fr auto"><input class="i" placeholder="Nombre" value="${esc(c.nombre)}" oninput="S.mon.competidores[${i}].nombre=this.value">
+      <input class="i" placeholder="dominio.com" value="${esc(c.dominio || "")}" oninput="S.mon.competidores[${i}].dominio=this.value">
+      <button class="btn link" onclick="S.mon.competidores.splice(${i},1);render()">✕</button></div>`).join("")}
+    <button class="btn peq" onclick="S.mon.competidores.push({nombre:'',dominio:''});render()">＋ Añadir competidor</button>
+    <label class="f">Buscadores de IA</label>
+    ${demo ? `<div class="sub">En la demostración se usan respuestas <b>simuladas</b>. Con tu web se consultan las APIs oficiales.</div>` :
+      `<div class="ramasel" style="flex-wrap:wrap">${["gemini", "openai", "perplexity"].map(x => `<label title="${aj.claves[x] ? "" : "Falta la clave: añádela en Ajustes"}"><input type="checkbox" ${M.motores.includes(x) ? "checked" : ""} onchange="toggleMotor('${x}',this.checked)"> ${NOMBRE_MOTOR[x]} ${aj.claves[x] ? "" : `<span class="s-alta sev">sin clave</span>`}</label>`).join("")}</div>`}
+    <div class="fila"><div><label class="f">Repeticiones por pregunta</label><select class="sel" onchange="S.mon.repeticiones=+this.value;render()">${[1, 2, 3, 4, 5].map(n => `<option ${M.repeticiones === n ? "selected" : ""}>${n}</option>`).join("")}</select>
+      <div class="ayuda">Las respuestas varían: repetir da resultados más estables.</div></div>
+      <div><label class="f">Consultas que se harán</label><b style="font-size:20px">${llamadas}</b>
+      <div class="ayuda">${demo ? "Simuladas: sin coste." : "Cada consulta tiene coste en la API correspondiente: revisa sus precios actuales."}</div></div></div>
+    <div class="barra"><button class="btn" onclick="guardarMonitor()">Guardar</button>
+      <button class="btn geo" onclick="ejecutarMonitor()" ${S.monitorT || !llamadas ? "disabled" : ""}>▶ Ejecutar monitor</button>
+      ${!demo && !motoresOk.length ? `<a href="#/ajustes">Añadir claves de API →</a>` : ""}</div>
+    ${S.monitorT ? `<div class="progreso"><i style="width:${S.monitorT.total ? Math.round(100 * S.monitorT.hecho / S.monitorT.total) : 3}%"></i></div><div class="sub">${S.monitorT.hecho} de ${S.monitorT.total || "…"} consultas</div>` : ""}
+    </div><div>${resultadosMonitor(m)}</div></div>`;
+  return html;
+}
+function toggleMotor(x, on) { const s = new Set(S.mon.motores); on ? s.add(x) : s.delete(x); S.mon.motores = [...s]; render(); }
+async function guardarMonitor(silencio) {
+  const M = S.mon, p = S.actual.proyecto;
+  try {
+    await api(`/api/proyecto/${p}/perfil`, {body: {marca: M.marca, alias: M.alias, dominio: M.dominio, ciudad: M.ciudad}});
+    S.ext = await api(`/api/proyecto/${p}/monitor/config`, {body: {preguntas: M.preguntas.split("\n"), competidores: M.competidores,
+      motores: M.motores, repeticiones: M.repeticiones}});
+    if (!silencio) toast("Configuración guardada");
+    return true;
+  } catch (e) { toast(e.message, true); return false; }
+}
+async function ejecutarMonitor() {
+  if (!await guardarMonitor(true)) return;
+  try {
+    const {trabajo} = await api(`/api/proyecto/${S.actual.proyecto}/monitor/ejecutar`, {body: {}});
+    S.monitorT = {hecho: 0, total: 0}; render();
+    while (true) {
+      await new Promise(r => setTimeout(r, 700));
+      const t = await api("/api/trabajo/" + trabajo);
+      S.monitorT = t; if (location.hash.startsWith("#/externo/monitor")) render();
+      if (t.estado === "error") { S.monitorT = null; render(); return toast(t.error, true); }
+      if (t.estado === "terminado") { S.monitorT = null; toast("Monitor completado"); return refrescar(); }
+    }
+  } catch (e) { S.monitorT = null; render(); toast(e.message, true); }
+}
+function resultadosMonitor(m) {
+  const u = m.ultima;
+  if (!u) return `<div class="card pad"><h3>Resultados</h3><p class="sub">Todavía no has ejecutado el monitor. Verás en qué porcentaje de respuestas aparece tu marca, frente a tus competidores, y qué webs cita la IA cuando habla de tu sector.</p></div>`;
+  const r = u.resumen, marca = Object.keys(r.cuota)[0];
+  const max = Math.max(1, ...Object.values(r.cuota).map(v => v || 0));
+  let h = `<div class="card pad"><div style="display:flex;gap:10px;align-items:center"><h3 style="flex:1">Presencia en respuestas de IA</h3>${u.simulado ? `<span class="simul">Datos simulados</span>` : ""}</div>
+    <div class="sub" style="font-size:12.5px">${fecha(u.fecha)} · ${r.respuestas} respuestas · ${u.motores.map(x => NOMBRE_MOTOR[x] || x).join(", ")}${r.errores ? ` · <span class="no">${r.errores} errores</span>` : ""}</div>
+    <div style="margin-top:10px">${Object.entries(r.cuota).sort((a, b) => (b[1] || 0) - (a[1] || 0)).map(([n, v]) => `<div class="barh ${n === marca ? "tu" : ""}"><span>${esc(n)}${n === marca ? " (tú)" : ""}</span><div class="b"><i style="width:${100 * (v || 0) / max}%"></i></div><span style="text-align:right">${pc(v)}</span></div>`).join("")}</div>
+    <div class="sub" style="font-size:12px">% de respuestas en las que se menciona cada marca.</div></div>`;
+  h += `<h2>Por buscador</h2><div class="card tabla"><table><tr><th>Buscador</th><th class="num">Respuestas</th><th class="num">Te menciona</th><th class="num">Cita tu web</th><th>Errores</th></tr>
+    ${Object.entries(r.por_motor).map(([k, v]) => `<tr><td>${NOMBRE_MOTOR[k] || k}</td><td class="num">${v.respuestas}</td><td class="num">${pc(v.pct_mencion)}</td><td class="num">${pc(v.pct_cita_web)}</td><td class="sub" style="font-size:12px">${v.errores ? esc(v.error_ejemplo) : ""}</td></tr>`).join("")}</table></div>`;
+  h += `<h2>Webs que cita la IA sobre tu sector</h2><div class="card tabla"><table><tr><th>Web</th><th>Tipo</th><th class="num">% respuestas</th><th class="num">Junto a tu marca</th></tr>
+    ${r.fuentes.slice(0, 12).map(f => `<tr><td class="url">${esc(f.dominio)}</td><td>${f.tipo === "tercero" ? "Tercero" : f.tipo === "tu web" ? "<span class=si>Tu web</span>" : "Competidor"}</td><td class="num">${pc(f.pct)}</td><td class="num">${f.con_tu_marca}</td></tr>`).join("")}</table></div>
+    <p class="sub" style="font-size:12.5px">Las webs de terceros que más cita la IA son donde más te conviene aparecer: se convierten en acciones del plan.</p>`;
+  h += `<h2>Por pregunta</h2><div class="card tabla"><table><tr><th>Pregunta</th><th class="num">Te menciona</th><th>Recomienda a</th></tr>
+    ${r.preguntas.map(q => `<tr><td>${esc(q.pregunta)}</td><td class="num ${q.pct_marca ? "" : "no"}">${pc(q.pct_marca)}</td><td>${esc(q.competidores.join(", "))}</td></tr>`).join("")}</table></div>`;
+  if (u.respuestas && u.respuestas.length) h += `<details style="margin-top:10px"><summary>Ver las respuestas (${u.respuestas.length})</summary>${u.respuestas.slice(0, 40).map(x => `<div class="card pad" style="margin:8px 0;font-size:13px">
+    <b>${NOMBRE_MOTOR[x.motor] || x.motor}</b> · ${esc(x.pregunta)} ${x.error ? `<span class="no">${esc(x.error)}</span>` : (x.menciona_marca ? `<span class="ok-v">te menciona</span>` : `<span class="pill">no te menciona</span>`)}
+    ${x.texto ? `<p style="white-space:pre-wrap;margin:6px 0">${esc(x.texto.slice(0, 900))}${x.texto.length > 900 ? "…" : ""}</p>` : ""}
+    ${(x.fuentes || []).length ? `<div class="sub" style="font-size:12px">Fuentes: ${x.fuentes.map(f => esc(f.url)).join(" · ")}</div>` : ""}</div>`).join("")}</details>`;
+  if (m.historial.length > 1) h += `<h2>Evolución</h2><div class="card pad">${m.historial.map(x => `<div class="barh"><span class="sub">${fecha(x.fecha)}${x.simulado ? " (sim.)" : ""}</span><div class="b"><i style="width:${x.pct_mencion || 0}%;background:var(--geo)"></i></div><span style="text-align:right">${pc(x.pct_mencion)}</span></div>`).join("")}</div>`;
+  return h;
+}
+
+function extResenas() {
+  const e = S.ext, rs = e.resenas, wd = e.wikidata, demo = S.actual.demo;
+  const consulta = S.consultaPlaces ?? [e.perfil.marca, e.perfil.ciudad].filter(Boolean).join(" ");
+  const fila = (x, tu) => `<tr><td>${tu ? "<b>" : ""}${esc(x.nombre)}${tu ? " (tú)</b>" : ""}<div class="sub" style="font-size:12px">${esc(x.direccion || "")}</div></td>
+    <td class="num">${x.nota != null ? String(x.nota).replace(".", ",") + " ★" : "—"}</td><td class="num">${x.resenas}</td><td>${x.url ? `<a href="${esc(x.url)}" target="_blank" rel="noopener">Ver en Maps</a>` : ""}</td></tr>`;
+  return `<div class="grid2" style="align-items:start"><div><div class="card pad"><h3>Reseñas en Google</h3>
+    <p class="sub">Busca tu empresa y la de tus competidores en Google Maps (API de Google Places). Los competidores son los del monitor de IA.</p>
+    <div class="camp" style="grid-template-columns:1fr auto"><input class="i" id="q-places" value="${esc(consulta)}" oninput="S.consultaPlaces=this.value" placeholder="Nombre de la empresa y ciudad">
+    <button class="btn pri" onclick="postExt('resenas',{consulta:$('#q-places').value},'Reseñas actualizadas')" ${demo || e.ajustes.claves.places ? "" : "disabled"}>Buscar</button></div>
+    ${demo || e.ajustes.claves.places ? "" : `<div class="ayuda">Falta la clave de Google Places: <a href="#/ajustes">añádela en Ajustes</a>.</div>`}</div>
+    ${rs ? `<div class="card tabla" style="margin-top:14px"><table><tr><th>Empresa</th><th class="num">Nota</th><th class="num">Reseñas</th><th></th></tr>
+      ${rs.tu ? fila(rs.tu, true) : `<tr><td colspan="4" class="no">No se encontró tu empresa con esa búsqueda.</td></tr>`}
+      ${rs.competidores.map(x => fila(x)).join("")}</table></div>
+      <p class="sub" style="font-size:12.5px">${rs.simulado ? `<span class="simul">Datos de ejemplo</span> ` : ""}Actualizado ${fecha(rs.fecha)}. Criterio de Tríada: «sí» con tantas reseñas como la mediana de tus competidores y nota ≥ 4,3.</p>` : ""}</div>
+    <div><div class="card pad"><h3>Entidad en Wikidata</h3><p class="sub">Comprueba si tu empresa tiene ficha en Wikidata, una fuente de entidades que usan buscadores e IA. Es gratuito.</p>
+      <button class="btn" onclick="postExt('wikidata',{},'Wikidata comprobado')">Comprobar «${esc(e.perfil.marca || "tu marca")}»</button>
+      ${wd ? `<div style="margin-top:12px">${wd.coincide ? `<span class="ok-v">Coincidencia exacta</span>` : `<span class="pill">Sin coincidencia exacta</span>`}
+        ${wd.candidatos.length ? `<ul style="font-size:13px">${wd.candidatos.map(c => `<li><a href="${esc(c.url)}" target="_blank" rel="noopener">${esc(c.nombre)}</a> <span class="sub">${esc(c.id)} · ${esc(c.descripcion)}</span></li>`).join("")}</ul>` : ""}
+        <p class="sub" style="font-size:12.5px">Comprueba que la coincidencia es realmente tu empresa. Si no tienes ficha, crearla es una acción del plan.</p></div>` : ""}</div></div></div>`;
+}
+
+// ------------------------------------------------------------ ajustes
+function vistaAjustes() {
+  const aj = S.ajustes || (S.ext && S.ext.ajustes);
+  if (!aj) { api("/api/ajustes").then(a => { S.ajustes = a; render(); }); return cabecera("Ajustes") + `<div class="card pad">Cargando…</div>`; }
+  const clave = (k, titulo, ayuda) => `<label class="f">${titulo} ${aj.claves[k] ? `<span class="ok-v">configurada</span>` : ""}</label>
+    <input class="i" type="password" id="k-${k}" placeholder="${aj.claves[k] ? "•••••••• (déjalo vacío para mantenerla)" : "Pega aquí la clave"}" autocomplete="off"><div class="ayuda">${ayuda}</div>`;
+  return cabecera("Ajustes", "Claves de API, modelos y pesos de la nota global") + `<div class="grid2" style="align-items:start">
+    <div class="card pad"><h3>Claves de API</h3><p class="sub" style="margin-bottom:0">Se guardan solo en tu ordenador, en la carpeta de datos de Tríada. No se envían a ningún sitio salvo a la API correspondiente.</p>
+      ${clave("gemini", "Gemini (Google AI Studio)", "Se crea en Google AI Studio, vinculada a tu proyecto de Google Cloud. Según Google, las búsquedas de Gemini 3 incluyen 5.000 gratis al mes; después tienen coste por búsqueda.")}
+      ${clave("openai", "OpenAI (ChatGPT)", "Se crea en la plataforma de desarrolladores de OpenAI. Usa la búsqueda web de la Responses API (tiene coste por búsqueda).")}
+      ${clave("perplexity", "Perplexity", "Se crea en la configuración de API de Perplexity (modelo sonar).")}
+      ${clave("places", "Google Places", "Activa «Places API (New)» en tu proyecto de Google Cloud y crea una clave restringida a esa API. La nota y el número de reseñas se facturan en el nivel Enterprise de Text Search.")}
+      <h3 style="margin-top:20px">Modelos</h3>
+      <div class="fila">${["gemini", "openai", "perplexity"].map(k => `<div><label class="f">${NOMBRE_MOTOR[k]}</label><input class="i" id="m-${k}" value="${esc(aj.modelos[k])}"></div>`).join("")}</div>
+      <div class="ayuda">Valores por defecto según la documentación oficial actual. Cámbialos si el proveedor publica uno nuevo.</div></div>
+    <div class="card pad"><h3>Peso de «en la web» en la nota global</h3><p class="sub">El resto corresponde a lo de fuera de la web (señales externas y resultado real). Es un criterio de Tríada, no una cifra oficial: ajústalo a tu negocio.</p>
+      <p class="sub" style="font-size:12.5px">El SEO no tiene peso externo: se evalúa solo con lo que hay en la web.</p>
+      ${["sem", "geo"].map(r => `<label class="f"><span class="tag t-${r}">${r.toUpperCase()}</span> En la web <b id="pv-${r}">${Math.round(aj.pesos[r] * 100)}</b> % · fuera <b id="pf-${r}">${100 - Math.round(aj.pesos[r] * 100)}</b> %</label>
+        <input type="range" min="0" max="100" step="5" id="p-${r}" value="${Math.round(aj.pesos[r] * 100)}" style="width:100%" oninput="$('#pv-${r}').textContent=this.value;$('#pf-${r}').textContent=100-this.value">`).join("")}
+    </div></div><div class="barra"><button class="btn pri" onclick="guardarAjustes()">Guardar ajustes</button></div>`;
+}
+async function guardarAjustes() {
+  const claves = {}, modelos = {}, pesos = {};
+  for (const k of ["gemini", "openai", "perplexity", "places"]) { const v = $("#k-" + k).value.trim(); if (v) claves[k] = v; }
+  for (const k of ["gemini", "openai", "perplexity"]) modelos[k] = $("#m-" + k).value.trim();
+  for (const r of ["sem", "geo"]) pesos[r] = +$("#p-" + r).value / 100;
+  try { S.ajustes = await api("/api/ajustes", {body: {claves, modelos, pesos}}); toast("Ajustes guardados"); await refrescar(); }
+  catch (e) { toast(e.message, true); }
+}
+
+// ------------------------------------------------------------ inicio
+(async function () {
+  try {
+    S.info = await api("/api/info");
+    await cargarLista();
+    let id = null; try { id = localStorage.getItem("triada.actual"); } catch {}
+    if (!S.lista.some(x => x.id === id)) id = S.lista[0] && S.lista[0].id;
+    await abrir(id);
+  } catch (e) { toast("No se pudo conectar con Tríada: " + e.message, true); }
+  render();
+})();
+</script>
+</body>
+</html>
