@@ -4,7 +4,9 @@ Aplicación local que audita y optimiza la web de una empresa en tres vertientes
 (visibilidad en buscadores con IA). Versión actual: **0.4.0**. Todo el producto (interfaz, código, comentarios
 e identificadores) está **en español**: mantén ese idioma.
 
-El historial de decisiones de la conversación en la que nació el proyecto está en `docs/HISTORIAL.md`.
+Documentación de traspaso (léela al empezar a trabajar en el proyecto):
+- `docs/CONTEXTO_COMPLETO.md`: funcionalidad, fórmulas, API local, decisiones, limitaciones y próximos pasos en detalle.
+- `docs/HISTORIAL.md`: cómo evolucionó el proyecto en la conversación en la que nació.
 
 ## Cómo ejecutar
 
