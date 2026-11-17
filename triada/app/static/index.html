@@ -99,7 +99,7 @@ details ul{margin:6px 0;padding-left:18px}
 .est{font-size:11.5px;font-weight:650;padding:1px 8px;border-radius:999px}
 .est.lista{background:#e7f1ec;color:var(--ok)}.est.datos{background:#fff1e0;color:var(--alta)}.est.hecha{background:var(--fg);color:#fff}
 .banner{padding:14px 18px;border-radius:var(--r);margin:14px 0;display:flex;gap:12px;align-items:center;flex-wrap:wrap}
-.banner.ok{background:#e7f1ec}.banner.mal{background:#fdecea}
+.banner.ok{background:#e7f1ec}.banner ul.motivos{margin:6px 0;padding-left:18px}.banner.mal{background:#fdecea}
 /* formularios */
 label.f{display:block;font-weight:600;font-size:13px;margin:14px 0 5px}
 input.i,textarea.i{width:100%;padding:9px 11px;border:1px solid var(--line);border-radius:8px;background:#fff}
@@ -461,12 +461,16 @@ function vistaSolucionar(r) {
       title="Marca todas las correcciones de ${r.toUpperCase()} que se pueden aplicar. Las que tienen «REVISAR» no se marcan hasta que completes el dato.">${todas ? "☐ Quitar selección" : `☑ Seleccionar todas (${listas.length})`}</button>
     <button class="btn" onclick="solucionar('${r}', false)" ${nsel ? "" : "disabled"}>Aplicar seleccionadas (${nsel})</button>
     <span class="sub">${listas.length} listas · ${datos.length} necesitan datos · ${fx.filter(f => ap.has(f.id)).length} aplicadas</span>
-  </div>`;
+  </div>
+  ${datos.length ? `<div class="ayuda" style="margin:-8px 0 12px">Las ${datos.length} que necesitan datos («REVISAR») no se marcan ni se aplican hasta que completes el valor: después ya se pueden seleccionar.</div>` : ""}`;
   const res = S.ultimoResultado;
   if (res && res.rama === r) {
     if (res.descarga) html += `<div class="banner ok">📦 Paquete generado. <a class="btn peq" href="${res.descarga}">Descargar ${esc(res.nombre)}</a></div>`;
     else html += `<div class="banner ${res.aplicados.length ? "ok" : "mal"}"><div><b>${res.aplicados.length} cambio(s) aplicados</b>${res.omitidos.length ? ` · ${res.omitidos.length} omitido(s)` : ""}.
-      ${res.omitidos.length ? `<details><summary>Ver omitidos</summary><ul>${res.omitidos.map(o => `<li>${esc(o.id)}: ${esc(o.motivo)}</li>`).join("")}</ul></details>` : ""}</div>
+      ${res.descargadas ? ` Se descargaron de tu web ${res.descargadas} página(s).` : ""}
+      ${res.omitidos.length ? `<ul class="motivos">${motivosOmitidos(res.omitidos)}</ul>
+        <details><summary>Ver omitidos uno a uno</summary><ul>${res.omitidos.map(o => `<li>${esc(o.id)}: ${esc(o.motivo)}</li>`).join("")}</ul></details>` : ""}
+      ${(res.fallidas || []).length ? `<details><summary>${res.fallidas.length} página(s) no se pudieron descargar</summary><ul>${res.fallidas.map(x => `<li>${esc(ruta(x.url))}: ${esc(x.motivo)}</li>`).join("")}</ul></details>` : ""}</div>
       <span style="flex:1"></span>${!res.aplicados.length ? "" : res.destino === "subidos"
         ? `<a class="btn pri" href="/api/subidas/${a.id}/descargar">⇩ Descargar HTML modificado</a>`
         : `<button class="btn pri" onclick="reanalizar()">↻ Volver a analizar y ver la mejora</button>`}</div>`;
@@ -503,6 +507,11 @@ function selTodas(r, on) {
   S.actual.fixes.filter(f => f.ramas.includes(r)).forEach(f => S.sel[r][f.id] = on && fixLista(f) && !ap.has(f.id));
   render();
 }
+function motivosOmitidos(omitidos) {
+  const c = {};
+  omitidos.forEach(o => c[o.motivo] = (c[o.motivo] || 0) + 1);
+  return Object.entries(c).sort((x, y) => y[1] - x[1]).map(([m, n]) => `<li><b>${n}</b> · ${esc(m)}</li>`).join("");
+}
 function selGrupo(r, cod, on) {
   const ap = aplicadasDestino(S.actual);
   S.actual.fixes.filter(f => f.ramas.includes(r) && f.codigo_issue === cod).forEach(f => S.sel[r][f.id] = on && fixLista(f) && !ap.has(f.id));
@@ -512,18 +521,33 @@ async function solucionar(r, auto) {
   const a = S.actual, ap = aplicadasDestino(a);
   const ids = a.fixes.filter(f => f.ramas.includes(r) && !ap.has(f.id) && (auto ? fixLista(f) : S.sel[r][f.id])).map(f => f.id);
   if (!ids.length) return toast("No hay correcciones que aplicar", true);
-  if (S.destino === "subidos" && !(S.subidas && S.subidas.archivos.length)) return toast("Primero sube los archivos HTML de tu web", true);
+  let desde_web = false;
+  if (S.destino === "subidos") {
+    // páginas con correcciones que no tienen archivo subido: se ofrece traer su HTML desde la web
+    const conArchivo = new Set(((S.subidas || {}).archivos || []).filter(x => x.url).map(x => x.url));
+    const sinArchivo = a.fixes.filter(f => ids.includes(f.id) && f.url && f.tipo !== "archivo" && fixLista(f) && !conArchivo.has(f.url));
+    const paginas = new Set(sinArchivo.map(f => f.url)).size;
+    if (paginas) {
+      desde_web = confirm(`${sinArchivo.length} corrección(es) son de ${paginas} página(s) cuyo HTML no has subido.\n\n`
+        + `Aceptar: Tríada descarga ese HTML de tu web y aplica también esas correcciones (puede tardar un poco).\n`
+        + `Cancelar: se aplican solo a los archivos que has subido.`);
+      if (!desde_web && !conArchivo.size) return toast("Sube los archivos HTML o deja que Tríada los descargue de tu web", true);
+    }
+    if (desde_web) toast(`Descargando ${paginas} página(s) de tu web…`);
+  }
   if (S.destino === "carpeta" && !S.carpeta.trim()) return toast("Indica la carpeta de tu web, o elige otra opción", true);
   if (S.destino === "carpeta" && !a.demo && !confirm(`Se van a modificar los archivos de:\n${S.carpeta}\n\nSe guardará una copia de seguridad y podrás deshacerlo. ¿Continuar?`)) return;
   const ediciones = {}; ids.forEach(id => { if (S.ediciones[id] != null) ediciones[id] = S.ediciones[id]; });
   try {
     const res = S.destino === "subidos"
-      ? await api(`/api/subidas/${a.id}/aplicar`, {body: {ids, ediciones}})
+      ? await api(`/api/subidas/${a.id}/aplicar`, {body: {ids, ediciones, desde_web}})
       : await api("/api/solucionar", {body: {analisis: a.id, ids, ediciones, destino: S.destino, carpeta: S.carpeta}});
     S.ultimoResultado = {...res, rama: r, destino: S.destino, aplicados: res.aplicados || [], omitidos: res.omitidos || []};
     if (res.descarga) { location.href = res.descarga; toast("Paquete descargado"); }
     else toast(`${res.aplicados.length} cambios aplicados`);
-    S.sel[r] = {};
+    if (res.subidas) S.subidas = res.subidas;
+    // solo se desmarcan las aplicadas: lo omitido sigue marcado para poder corregirlo y reintentar
+    (res.aplicados || []).forEach(id => delete S.sel[r][id]);
     await abrir(a.id); render();
   } catch (e) { toast(e.message, true); }
 }
@@ -542,7 +566,8 @@ function panelSubidas() {
         <td><select class="sel" style="max-width:260px" onchange="asignarHTML('${esc(x.nombre)}', this.value)">${opciones(x.url)}</select></td>
         <td class="sub" style="font-size:12.5px">${esc(x.metodo || "—")}</td><td class="num">${x.cambios}</td>
         <td><a class="btn peq link" href="/api/subidas/${a.id}/archivo?nombre=${encodeURIComponent(x.nombre)}">Descargar</a></td></tr>`).join("")}</table></div>`
-      : `<p class="sub" style="margin-bottom:0">Sube las páginas de tu web: archivos .html sueltos o un .zip con la web entera. Cada archivo se asigna solo a su página del análisis (por canonical, ruta, nombre, título o H1); puedes cambiarlo a mano.</p>`}
+      : `<p class="sub" style="margin-bottom:0">Sube las páginas de tu web: archivos .html sueltos o un .zip con la web entera. Cada archivo se asigna solo a su página del análisis (por canonical, ruta, nombre, título o H1); puedes cambiarlo a mano.
+        <br>¿No tienes los archivos (por ejemplo, tu web es WordPress)? No pasa nada: al aplicar, Tríada te ofrece descargar el HTML de cada página desde tu web.</p>`}
   </div>`;
 }
 async function subirHTML(files) {

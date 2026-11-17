@@ -301,7 +301,8 @@ class Handler(http.server.BaseHTTPRequestHandler):
                 if accion == "asignar":
                     return self._json(subidas.asignar(aid, cuerpo.get("nombre", ""), cuerpo.get("url")))
                 if accion == "aplicar":
-                    return self._json(subidas.aplicar(aid, cuerpo.get("ids") or [], cuerpo.get("ediciones") or {}))
+                    return self._json(subidas.aplicar(aid, cuerpo.get("ids") or [], cuerpo.get("ediciones") or {},
+                                                   desde_web=bool(cuerpo.get("desde_web"))))
                 if accion == "restablecer":
                     return self._json(subidas.restablecer(aid))
                 if accion == "borrar":

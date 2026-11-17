@@ -99,3 +99,36 @@ def test_exportar_modificados_de_carpeta(analisis):
     aplicar.aplicar_en_carpeta(aid, ids, {}, demo["carpeta"])
     z = zipfile.ZipFile(io.BytesIO(aplicar.zip_modificados_carpeta(aid)))
     assert "productos/silla-roble/index.html" in z.namelist()
+
+
+def test_aplicar_trayendo_el_html_desde_la_web(analisis):
+    """Sin archivos subidos (p. ej. web en WordPress): se descarga el HTML de la web y se aplica todo."""
+    from urllib.parse import urlparse
+
+    import httpx
+
+    from triada.app import servicio, subidas
+
+    aid, _ = analisis
+    a = servicio.leer_analisis(aid)
+
+    def responder(peticion: httpx.Request) -> httpx.Response:
+        ruta = urlparse(str(peticion.url)).path.strip("/")
+        archivo = DEMO / ruta / "index.html" if ruta else DEMO / "index.html"
+        if not archivo.exists():
+            return httpx.Response(404)
+        return httpx.Response(200, content=archivo.read_bytes(), headers={"content-type": "text/html; charset=utf-8"})
+
+    cliente = httpx.Client(transport=httpx.MockTransport(responder))
+    seo = [f["id"] for f in a["fixes"] if "seo" in f["ramas"] and "«REVISAR»" not in f["valor_propuesto"]]
+    r = subidas.aplicar(aid, seo, {}, desde_web=True, cliente=cliente)
+    assert r["descargadas"] >= 4 and not r["fallidas"]
+    assert not [o for o in r["omitidos"] if "Ningún archivo" in o["motivo"]]
+    nombres = {x["nombre"]: x for x in r["subidas"]["archivos"]}
+    assert nombres["index.html"]["metodo"] == "descargada de la web"
+    assert "productos/silla-roble/index.html" in nombres
+    z = zipfile.ZipFile(io.BytesIO(subidas.zip_modificados(aid)))
+    assert {"index.html", "productos/silla-roble/index.html", "CAMBIOS.txt"} <= set(z.namelist())
+    # el original descargado se conserva para poder restablecerlo
+    subidas.restablecer(aid)
+    assert subidas.archivo(aid, "index.html")[0] == (DEMO / "index.html").read_bytes()

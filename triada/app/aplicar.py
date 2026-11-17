@@ -162,6 +162,9 @@ def _validar(f: dict[str, Any]) -> str | None:
         return "Contiene datos «REVISAR» sin completar. Edítalos antes de aplicar."
     if not (f.get("valor_propuesto") or "").strip():
         return "El valor propuesto está vacío."
+    # un JSON-LD mal escrito se omite solo él, sin bloquear el resto de cambios de la página
+    if f.get("tipo") in ("jsonld", "jsonld_breadcrumb") and _tipo_jsonld(f["valor_propuesto"]) is None:
+        return "El JSON-LD no es válido. Revisa comas, comillas y llaves."
     return None
 
 

@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import base64
 import io
+from concurrent.futures import ThreadPoolExecutor
 import json
 import re
 import shutil
@@ -18,9 +19,12 @@ import zipfile
 from datetime import datetime
 from pathlib import Path, PurePosixPath
 from typing import Any
-from urllib.parse import urljoin, urlparse
+from urllib.parse import unquote, urljoin, urlparse
 
+import httpx
 from bs4 import BeautifulSoup
+
+from ..config import Config
 
 from .aplicar import ErrorAplicacion, _validar, aplicar_en_html, seleccionar
 from .servicio import carpeta_datos, leer_analisis
@@ -186,12 +190,97 @@ def asignar(aid: str, nombre: str, url: str | None) -> dict[str, Any]:
     return estado(aid)
 
 
-def aplicar(aid: str, ids: list[str], ediciones: dict[str, str]) -> dict[str, Any]:
+def _nombre_desde_url(url: str) -> str | None:
+    """'https://web.com/producto/silla/' -> 'producto/silla/index.html' · 'https://web.com/' -> 'index.html'."""
+    ruta = unquote(urlparse(url).path or "/")
+    if not ruta.lower().endswith(EXT_HTML):
+        ruta = ruta.rstrip("/") + "/index.html"
+    return _nombre_seguro(ruta)
+
+
+def traer_de_la_web(aid: str, urls: list[str] | None = None,
+                    cliente: httpx.Client | None = None) -> dict[str, Any]:
+    """Descarga de la web el HTML de las páginas del análisis que no tienen archivo subido.
+
+    Así se pueden aplicar todas las correcciones y exportar el HTML modificado aunque el usuario no
+    tenga los archivos (p. ej. una web en WordPress). Se guardan como si se hubieran subido: el original
+    se conserva y se puede restablecer.
+    """
     analisis = leer_analisis(aid)
     if analisis is None:
         raise ErrorAplicacion("Análisis no encontrado")
     est = _leer_estado(aid)
-    if not est["archivos"]:
+    asignadas = {a["url"] for a in est["archivos"] if a["url"]}
+    pedidas = set(urls) if urls is not None else None
+    objetivo = [p["url"] for p in analisis["paginas"]
+                if p.get("status") == 200 and p["url"] not in asignadas and (pedidas is None or p["url"] in pedidas)]
+    propio = cliente is None
+    if propio:
+        cliente = httpx.Client(headers={"User-Agent": Config.user_agent, "Accept-Language": "es,en;q=0.8"},
+                               follow_redirects=True, timeout=20)
+
+    def bajar(url: str) -> tuple[str, bytes | None, str]:
+        try:
+            r = cliente.get(url)
+        except httpx.HTTPError as e:
+            return url, None, f"No se pudo descargar ({type(e).__name__})"
+        if r.status_code != 200:
+            return url, None, f"La web respondió {r.status_code}"
+        if "html" not in r.headers.get("content-type", "html").lower():
+            return url, None, "No es una página HTML"
+        if len(r.content) > MAX_TOTAL:
+            return url, None, "Página demasiado grande"
+        return url, r.content, ""
+
+    try:
+        with ThreadPoolExecutor(max_workers=8) as ex:
+            resultados = list(ex.map(bajar, objetivo))
+    finally:
+        if propio:
+            cliente.close()
+
+    base = _base(aid)
+    existentes = {a["nombre"]: a for a in est["archivos"]}
+    descargadas, fallidas = 0, []
+    for url, datos, error in resultados:
+        nombre = _nombre_desde_url(url)
+        if datos is None or not nombre:
+            fallidas.append({"url": url, "motivo": error or "Ruta no válida"})
+            continue
+        if nombre in existentes:  # ya hay un archivo con ese nombre asignado a otra página
+            raiz, ext = nombre.rsplit(".", 1)
+            n = 2
+            while f"{raiz}-{n}.{ext}" in existentes:
+                n += 1
+            nombre = f"{raiz}-{n}.{ext}"
+        for carpeta in ("original", "modificado"):
+            destino = base / carpeta / nombre
+            destino.parent.mkdir(parents=True, exist_ok=True)
+            destino.write_bytes(datos)
+        existentes[nombre] = {"nombre": nombre, "url": url, "metodo": "descargada de la web", "bytes": len(datos)}
+        est["aplicados"].pop(nombre, None)
+        descargadas += 1
+    est["archivos"] = sorted(existentes.values(), key=lambda x: x["nombre"])
+    _guardar_estado(aid, est)
+    return estado(aid) | {"descargadas": descargadas, "fallidas": fallidas}
+
+
+def aplicar(aid: str, ids: list[str], ediciones: dict[str, str], desde_web: bool = False,
+            cliente: httpx.Client | None = None) -> dict[str, Any]:
+    """Aplica las correcciones a los archivos subidos.
+
+    Con desde_web=True, antes se descarga de la web el HTML de las páginas afectadas que no tienen archivo.
+    """
+    analisis = leer_analisis(aid)
+    if analisis is None:
+        raise ErrorAplicacion("Análisis no encontrado")
+    traidas: dict[str, Any] = {"descargadas": 0, "fallidas": []}
+    if desde_web:
+        urls = [f["url"] for f in seleccionar(analisis, ids, ediciones)
+                if f.get("url") and f["tipo"] != "archivo" and not _validar(f)]
+        traidas = traer_de_la_web(aid, urls, cliente)
+    est = _leer_estado(aid)
+    if not est["archivos"] and not desde_web:
         raise ErrorAplicacion("Primero sube los archivos HTML.")
     base = _base(aid)
     por_url: dict[str, list[dict]] = {}
@@ -240,7 +329,8 @@ def aplicar(aid: str, ids: list[str], ediciones: dict[str, str]) -> dict[str, An
     aplicados = list(dict.fromkeys(aplicados))
     est["historial"].append({"fecha": datetime.now().isoformat(timespec="seconds"), "aplicados": aplicados})
     _guardar_estado(aid, est)
-    return {"aplicados": aplicados, "omitidos": omitidos, "subidas": estado(aid)}
+    return {"aplicados": aplicados, "omitidos": omitidos, "subidas": estado(aid),
+            "descargadas": traidas["descargadas"], "fallidas": traidas["fallidas"]}
 
 
 def restablecer(aid: str) -> dict[str, Any]:
