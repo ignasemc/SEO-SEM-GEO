@@ -21,6 +21,7 @@ import anyio
 
 from . import __version__
 from .app import aplicar, servicio, subidas
+from . import ia
 from .app.aplicar import ErrorAplicacion
 from .externo import servicio as externo
 from .fixes import REVISAR
@@ -39,13 +40,22 @@ INSTRUCCIONES = """\
 Tríada audita y corrige webs de empresa en tres vertientes: SEO (posicionamiento orgánico), SEM (Google Ads)
 y GEO (visibilidad en buscadores con IA). Se ejecuta en el ordenador del usuario. Responde siempre en español.
 
-Flujo habitual: analizar_web → ver_problemas / ver_correcciones de la vertiente pedida → (si hace falta)
-editar_correccion → aplicar_correcciones → explicar el resultado y dónde está el archivo generado.
+Flujo habitual (el usuario puede no saber de programación: hazlo tú de principio a fin):
+1. analizar_web con la página principal (rastrea todas las páginas del dominio: landings, quiénes somos, contacto…).
+2. ver_correcciones de la vertiente pedida. Para cada página con correcciones, ver_pagina para leer su contenido.
+3. Recomienda la palabra clave principal y 2-5 secundarias de cada página y úsalas: reescribe títulos (30-60
+   caracteres, palabra clave al principio, marca al final), meta descripciones (120-155, con llamada a la acción) y
+   H1 con editar_correccion; si el título o la descripción actuales no llevan la palabra clave y no hay corrección,
+   crea una con nueva_correccion.
+4. Resuelve tú los «REVISAR» con editar_correccion: usa los datos que aparecen en la página o en sus datos
+   estructurados (precio, marca, SKU…). Si un dato no aparece, quita esa propiedad del JSON-LD.
+5. aplicar_correcciones (destino html) y explica el resultado, las palabras clave elegidas y dónde está el .zip.
 
 Reglas que hay que respetar:
 - Trabaja cada vertiente por separado salvo que el usuario pida varias.
-- Nunca inventes datos. Las correcciones con «REVISAR» necesitan datos reales (SKU, GTIN, marca, logo, precio…):
-  pídeselos al usuario o tómalos solo de lo que se ve en su web; si no los tienes, déjalas sin aplicar y dilo.
+- Nunca inventes GTIN/EAN, SKU, precios, valoraciones, reseñas, teléfonos ni direcciones: o están en la página, o
+  te los da el usuario, o se quita el campo. Las palabras clave son recomendaciones tuyas a partir del contenido,
+  no volúmenes de búsqueda medidos: dilo así.
 - Las puntuaciones son un indicador interno para priorizar: no prometas posiciones en Google ni citas en la IA.
 - Antes de aplicar en una carpeta del ordenador del usuario, confirma con él la carpeta: se modifican sus archivos
   (con copia de seguridad y opción de deshacer).
@@ -179,6 +189,34 @@ def _crear_servidor():
         """
         return exportar(analisis, rama, formato)
 
+    @mcp.tool(annotations=ToolAnnotations(readOnlyHint=True, openWorldHint=True))
+    async def ver_pagina(analisis: str, url: str) -> dict[str, Any]:
+        """Contenido de una página del análisis: título, meta descripción, encabezados, texto visible y datos
+        estructurados existentes. Úsalo para elegir palabras clave y para completar los «REVISAR» con datos reales.
+
+        Args:
+            analisis: Id del análisis.
+            url: URL de la página (tal como aparece en ver_correcciones).
+        """
+        return await anyio.to_thread.run_sync(lambda: ver_pagina_de(analisis, url))
+
+    @mcp.tool(annotations=ToolAnnotations(readOnlyHint=False, destructiveHint=False, openWorldHint=False))
+    def nueva_correccion(analisis: str, url: str, tipo: Literal["titulo", "meta_description"], valor: str,
+                         rama: Rama = "seo", explicacion: str = "") -> dict[str, Any]:
+        """Crea una corrección nueva de título o meta descripción para una página (p. ej. para incluir la palabra
+        clave principal cuando la actual no la lleva). Si ya existe una de ese tipo para la página, edítala con
+        editar_correccion.
+
+        Args:
+            analisis: Id del análisis.
+            url: URL de la página.
+            tipo: titulo o meta_description.
+            valor: Texto nuevo.
+            rama: Vertiente en la que debe aparecer (además de SEO).
+            explicacion: Por qué se propone (palabra clave elegida), en una frase sencilla.
+        """
+        return ia.agregar_correccion(analisis, url, tipo, valor, rama, explicacion)
+
     @mcp.tool(annotations=ToolAnnotations(readOnlyHint=False, destructiveHint=True, openWorldHint=False))
     def deshacer_aplicacion(aplicacion: str) -> dict[str, Any]:
         """Deshace una aplicación en carpeta (restaura la copia de seguridad).
@@ -201,13 +239,7 @@ def _analisis(aid: str) -> dict[str, Any]:
     return a
 
 
-def _ruta_ediciones(aid: str) -> Path:
-    return servicio.carpeta_analisis(aid) / "ediciones.json"
-
-
-def leer_ediciones(aid: str) -> dict[str, str]:
-    f = _ruta_ediciones(aid)
-    return json.loads(f.read_text(encoding="utf-8")) if f.exists() else {}
+leer_ediciones = servicio.leer_ediciones
 
 
 def _valor(f: dict[str, Any], ediciones: dict[str, str]) -> str:
@@ -271,6 +303,20 @@ def ver_correcciones_de(aid: str, rama: str | None, estado: str, desde: int, lim
             "correcciones": filas[max(0, desde):max(0, desde) + max(1, limite)]}
 
 
+def ver_pagina_de(aid: str, url: str, cliente=None) -> dict[str, Any]:
+    a = _analisis(aid)
+    if url not in {p["url"] for p in a["paginas"]}:
+        raise ErrorAplicacion("Esa URL no es una página de este análisis.")
+    subidas.traer_de_la_web(aid, [url], cliente)
+    nombre = next((x["nombre"] for x in subidas.estado(aid)["archivos"] if x["url"] == url), None)
+    ruta = subidas._base(aid) / "original" / (nombre or "")
+    if not nombre or not ruta.is_file():
+        raise ErrorAplicacion("No se pudo descargar la página.")
+    pagina = next(p for p in a["paginas"] if p["url"] == url)
+    return {"url": url, "tipo": pagina.get("tipo"), **ia.texto_pagina(subidas._texto(ruta.read_bytes())),
+            "palabras_clave_de_contexto": ia.contexto_palabras(a)}
+
+
 def editar(aid: str, fid: str, valor: str) -> dict[str, Any]:
     a = _analisis(aid)
     f = next((x for x in a["fixes"] if x["id"] == fid), None)
@@ -278,9 +324,7 @@ def editar(aid: str, fid: str, valor: str) -> dict[str, Any]:
         raise ErrorAplicacion(f"No existe la corrección «{fid}» en este análisis.")
     if not valor.strip():
         raise ErrorAplicacion("El valor no puede estar vacío.")
-    ed = leer_ediciones(aid)
-    ed[fid] = valor
-    _ruta_ediciones(aid).write_text(json.dumps(ed, ensure_ascii=False, indent=2), encoding="utf-8")
+    servicio.guardar_ediciones(aid, {fid: valor})
     motivo = aplicar._validar(f | {"valor_propuesto": valor})
     return {"id": fid, "guardada": True, "lista_para_aplicar": motivo is None, **({"aviso": motivo} if motivo else {})}
 

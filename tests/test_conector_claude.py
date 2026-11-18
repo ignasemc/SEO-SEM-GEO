@@ -34,7 +34,8 @@ def test_conversacion_completa(tmp_path):
         async with Client(params) as c:
             nombres = {t.name for t in (await c.list_tools()).tools}
             assert {"analizar_web", "ver_problemas", "ver_correcciones", "editar_correccion",
-                    "aplicar_correcciones", "exportar_informe", "listar_analisis", "deshacer_aplicacion"} <= nombres
+                    "aplicar_correcciones", "exportar_informe", "listar_analisis", "deshacer_aplicacion",
+                    "ver_pagina", "nueva_correccion"} <= nombres
 
             r = _datos(await c.call_tool("analizar_web", {"url": url, "max_paginas": 50, "marca": "Reformas Norte"}))
             aid = r["analisis"]
@@ -51,6 +52,14 @@ def test_conversacion_completa(tmp_path):
             nuevo = f["valor_propuesto"].replace("«REVISAR»", "DATO-DEL-USUARIO")
             ed = _datos(await c.call_tool("editar_correccion", {"analisis": aid, "id": f["id"], "valor": nuevo}))
             assert ed["lista_para_aplicar"]
+
+            # Claude lee una página y añade un título con la palabra clave
+            pag = _datos(await c.call_tool("ver_pagina", {"analisis": aid, "url": url}))
+            assert pag["texto"] and pag["h1"]
+            nc = _datos(await c.call_tool("nueva_correccion", {
+                "analisis": aid, "url": url + "contacto/", "tipo": "titulo",
+                "valor": "Contacto reformas Madrid | Reformas Norte", "explicacion": "Palabra clave local."}))
+            assert nc["guardada"]
 
             ap = _datos(await c.call_tool("aplicar_correcciones", {"analisis": aid, "rama": "seo"}))
             assert ap["aplicados"] >= 10 and ap["paginas_descargadas_de_la_web"] >= 5

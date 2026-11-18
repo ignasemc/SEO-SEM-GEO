@@ -64,6 +64,22 @@ La demostración usa datos de ejemplo y respuestas simuladas (marcadas como tale
 > Aplicar en carpeta funciona con webs estáticas o copias locales. Para WordPress, Shopify, etc. usa el
 > paquete de cambios (incluye instrucciones); los conectores directos llegarán en la siguiente fase.
 
+## Optimizar con IA (un clic)
+
+En la pestaña **Solucionar** de SEO, SEM o GEO, el botón **✨ Optimizar con IA** hace todo el proceso:
+
+1. Descarga de tu web el HTML de cada página (inicio, landings, quiénes somos, contacto, productos…).
+2. La IA (Claude) elige las **palabras clave** de cada página y reescribe con ellas títulos, meta descripciones,
+   H1 y textos alternativos. Si un título o una descripción no llevan la palabra clave, propone uno nuevo.
+3. **Completa los «REVISAR»** con los datos que aparecen en la propia página (precio, marca, SKU…). Si un dato no
+   está, quita ese campo en vez de inventarlo.
+4. Aplica todas las correcciones y te deja el **HTML modificado** para descargar.
+
+Necesita una clave de API de Claude (console.anthropic.com → API Keys) en *Ajustes*. Tiene coste por uso: antes de
+empezar, Tríada muestra el número de páginas y un coste aproximado. En la demostración se usa un motor simulado
+gratuito. Las palabras clave son recomendaciones de la IA a partir del contenido (y de tus datos de Google Ads o
+Search Console si los importaste), no volúmenes de búsqueda medidos. Revisa las sugerencias antes de publicar.
+
 ## Usar Tríada desde Claude
 
 Tríada se puede conectar a **Claude Desktop** (o Claude Code) como conector local. Así le pides a Claude en el chat

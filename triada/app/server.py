@@ -19,6 +19,7 @@ from typing import Any
 from urllib.parse import parse_qs, urlparse
 
 from .. import __version__
+from .. import ia
 from ..externo import almacen
 from ..externo import servicio as externo
 from ..externo.importar import ErrorImportacion
@@ -117,6 +118,27 @@ def lanzar_monitor(proyecto: str) -> str:
     return tid
 
 
+def lanzar_ia(aid: str, rama: str) -> str:
+    """Optimiza con IA las páginas de una vertiente y aplica todas las correcciones al HTML (en segundo plano)."""
+    tid = servicio.nuevo_id()
+    TRABAJOS[tid] = {"id": tid, "estado": "ejecutando", "hecho": 0, "total": 0, "error": None, "tipo": "ia",
+                     "resultado": None}
+
+    def progreso(hecho: int, total: int) -> None:
+        TRABAJOS[tid].update(hecho=hecho, total=total)
+
+    def correr() -> None:
+        try:
+            res = ia.optimizar_y_aplicar(aid, rama, progreso=progreso)
+            TRABAJOS[tid].update(estado="terminado", resultado=res)
+        except Exception as e:  # noqa: BLE001 - se muestra al usuario
+            traceback.print_exc()
+            TRABAJOS[tid].update(estado="error", error=str(e))
+
+    threading.Thread(target=correr, daemon=True).start()
+    return tid
+
+
 def _con_externo(a: dict[str, Any]) -> dict[str, Any]:
     a["capas"] = externo.capas_de(a)
     return a
@@ -189,7 +211,11 @@ class Handler(http.server.BaseHTTPRequestHandler):
                 if a is None:
                     return self._error(404, "Análisis no encontrado")
                 a["aplicaciones"] = aplicar.listar_aplicaciones(ruta[1])
+                a["ediciones"] = servicio.leer_ediciones(ruta[1])
+                a["ia"] = ia.estado(ruta[1])
                 return self._json(_con_externo(a))
+            if len(ruta) == 3 and ruta[0] == "ia" and ruta[2] == "estimacion":
+                return self._json(ia.estimacion(ruta[1], q.get("rama", "seo")))
             if ruta == ["ajustes"]:
                 return self._json(almacen.ajustes_publicos())
             if len(ruta) >= 2 and ruta[0] == "subidas":
@@ -287,6 +313,13 @@ class Handler(http.server.BaseHTTPRequestHandler):
                 if not cuerpo.get("carpeta"):
                     return self._error(400, "Indica la carpeta del sitio donde aplicar los cambios")
                 return self._json(aplicar.aplicar_en_carpeta(cuerpo["analisis"], ids, ediciones, cuerpo["carpeta"]))
+            if len(ruta) == 2 and ruta[0] == "ia":
+                rama = cuerpo.get("rama")
+                if rama not in ("seo", "sem", "geo"):
+                    return self._error(400, "Vertiente no válida")
+                if servicio.leer_analisis(ruta[1]) is None:
+                    return self._error(404, "Análisis no encontrado")
+                return self._json({"trabajo": lanzar_ia(ruta[1], rama)})
             if ruta == ["deshacer"]:
                 return self._json(aplicar.deshacer(cuerpo["aplicacion"]))
             if ruta == ["ajustes"]:

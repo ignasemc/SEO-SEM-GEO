@@ -262,4 +262,7 @@ Clave de proyecto: `demo` para la demostración; si no, el host sin `www.` ni pu
 externos) · 0.4 SEO solo interno, subida de HTML, exportación de resultados y HTML modificado ·
 0.5 botón «Seleccionar todas» por vertiente, aplicar descargando el HTML desde la web (webs sin archivos, p. ej.
 WordPress), rastreo limitado al dominio indicado (antes una redirección interna a otra web la analizaba) y
-conector para Claude (servidor MCP local, `triada/conector_claude.py`, `triada conectar-claude`). Ver `docs/HISTORIAL.md`.
+conector para Claude (servidor MCP local, `triada/conector_claude.py`, `triada conectar-claude`) ·
+0.6 «Optimizar con IA» (`triada/ia.py`, Claude API): palabras clave por página, «REVISAR» resueltos con datos de la
+página (o el campo se quita; nunca se inventan identificadores ni precios), nuevas correcciones de título/meta con la
+palabra clave, y aplicación de todo al HTML descargado en un clic. El conector añade `ver_pagina` y `nueva_correccion`. Ver `docs/HISTORIAL.md`.

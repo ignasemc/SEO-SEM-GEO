@@ -99,6 +99,9 @@ details ul{margin:6px 0;padding-left:18px}
 .est{font-size:11.5px;font-weight:650;padding:1px 8px;border-radius:999px}
 .est.lista{background:#e7f1ec;color:var(--ok)}.est.datos{background:#fff1e0;color:var(--alta)}.est.hecha{background:var(--fg);color:#fff}
 .banner{padding:14px 18px;border-radius:var(--r);margin:14px 0;display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+.ia-card{margin-bottom:14px;border:1.5px solid #e3dcf3;background:#fbf9ff}
+.progreso{height:8px;background:#eee;border-radius:99px;margin-top:10px;overflow:hidden}.progreso div{height:100%;background:var(--geo)}
+.est.ia{background:#efe9fb;color:#6b4bb5}.iafix{font-size:12.5px;color:#5a4a86;margin-top:4px}.iafix .kw{color:var(--muted);margin-top:2px}
 .banner.ok{background:#e7f1ec}.banner ul.motivos{margin:6px 0;padding-left:18px}.banner.mal{background:#fdecea}
 /* formularios */
 label.f{display:block;font-weight:600;font-size:13px;margin:14px 0 5px}
@@ -229,6 +232,8 @@ async function abrir(id) {
   const nuevo = !S.actual || S.actual.id !== id;
   if (S.actual && S.actual.id !== id) { S.ediciones = {}; S.sel = selVacia(); S.ultimoResultado = null; }
   S.actual = await api("/api/analisis/" + id);
+  S.ediciones = {...(S.actual.ediciones || {}), ...(nuevo ? {} : S.edLocales || {})};
+  if (nuevo) S.edLocales = {};
   S.subidas = await api("/api/subidas/" + id);
   if (nuevo) S.destino = S.actual.carpeta_sitio ? "carpeta" : "subidos";
   S.carpeta = S.actual.carpeta_sitio || S.carpeta || "";
@@ -444,7 +449,7 @@ function vistaSolucionar(r) {
   const datos = fx.filter(f => !fixLista(f) && !ap.has(f.id));
   const sel = S.sel[r], nsel = fx.filter(f => sel[f.id]).length;
   const todas = listas.length > 0 && listas.every(f => sel[f.id]);
-  let html = `<div class="destino d3">
+  let html = panelIA(r) + `<div class="destino d3">
     <label class="opc ${S.destino === "subidos" ? "on" : ""}"><input type="radio" name="dest" ${S.destino === "subidos" ? "checked" : ""} onchange="S.destino='subidos';render()">
       <div><b>Subir archivos HTML</b><small>Sube las páginas (.html o un .zip de la web), Tríada las corrige y te devuelve el HTML modificado. Tus originales no se tocan.</small></div></label>
     <label class="opc ${S.destino === "carpeta" ? "on" : ""}"><input type="radio" name="dest" ${S.destino === "carpeta" ? "checked" : ""} onchange="S.destino='carpeta';render()">
@@ -468,6 +473,7 @@ function vistaSolucionar(r) {
     if (res.descarga) html += `<div class="banner ok">📦 Paquete generado. <a class="btn peq" href="${res.descarga}">Descargar ${esc(res.nombre)}</a></div>`;
     else html += `<div class="banner ${res.aplicados.length ? "ok" : "mal"}"><div><b>${res.aplicados.length} cambio(s) aplicados</b>${res.omitidos.length ? ` · ${res.omitidos.length} omitido(s)` : ""}.
       ${res.descargadas ? ` Se descargaron de tu web ${res.descargadas} página(s).` : ""}
+      ${res.ia ? `<div style="margin-top:4px">✨ IA${res.ia.simulado ? " (simulada, demo)" : ""}: ${res.ia.paginas} páginas · ${res.ia.correcciones_mejoradas} correcciones mejoradas · ${res.ia.revisar_completados} «REVISAR» resueltos · ${res.ia.nuevas_correcciones} títulos/descripciones nuevos con palabra clave${res.ia.simulado ? "" : ` · coste aprox. ${pc2(res.ia.coste_aprox_usd)} $`}.${(res.ia.paginas_con_error || []).length ? ` ${res.ia.paginas_con_error.length} página(s) no se pudieron optimizar.` : ""} Revisa las sugerencias abajo antes de publicar.</div>` : ""}
       ${res.omitidos.length ? `<ul class="motivos">${motivosOmitidos(res.omitidos)}</ul>
         <details><summary>Ver omitidos uno a uno</summary><ul>${res.omitidos.map(o => `<li>${esc(o.id)}: ${esc(o.motivo)}</li>`).join("")}</ul></details>` : ""}
       ${(res.fallidas || []).length ? `<details><summary>${res.fallidas.length} página(s) no se pudieron descargar</summary><ul>${res.fallidas.map(x => `<li>${esc(ruta(x.url))}: ${esc(x.motivo)}</li>`).join("")}</ul></details>` : ""}</div>
@@ -487,10 +493,12 @@ function vistaSolucionar(r) {
       const code = f.valor_propuesto.length > 160 || f.valor_propuesto.includes("\n");
       html += `<div class="fix ${hecha ? "aplicada" : ""}"><input type="checkbox" ${sel[f.id] ? "checked" : ""} ${hecha ? "disabled" : ""} onchange="S.sel['${r}']['${f.id}']=this.checked;render()">
         <div><div class="meta"><b>${esc(tipoFix(f.tipo))}</b><span class="url">${esc(ruta(f.url))}</span>
-          ${hecha ? `<span class="est hecha">Aplicada</span>` : ok ? `<span class="est lista">Lista</span>` : `<span class="est datos">Completa los «REVISAR»</span>`}<span class="sub">${f.id}</span></div>
+          ${hecha ? `<span class="est hecha">Aplicada</span>` : ok ? `<span class="est lista">Lista</span>` : `<span class="est datos">Completa los «REVISAR»</span>`}
+          ${(a.ia && a.ia.explicaciones && a.ia.explicaciones[f.id]) ? `<span class="est ia">✨ Sugerido por IA</span>` : ""}<span class="sub">${f.id}</span></div>
         ${f.valor_actual && !code ? `<div class="actual">Actual: ${esc(f.valor_actual)}</div>` : ""}
-        <textarea class="${code ? "code" : ""}" ${hecha ? "disabled" : ""} oninput="S.ediciones['${f.id}']=this.value" onchange="render()" rows="${code ? 8 : 1}">${esc(valorFix(f))}</textarea>
-        ${f.nota ? `<div class="nota">${esc(f.nota)}</div>` : ""}</div></div>`;
+        <textarea class="${code ? "code" : ""}" ${hecha ? "disabled" : ""} oninput="S.ediciones['${f.id}']=this.value;(S.edLocales=S.edLocales||{})['${f.id}']=this.value" onchange="render()" rows="${code ? 8 : 1}">${esc(valorFix(f))}</textarea>
+        ${iaFix(f)}
+        ${f.nota && !(ok && f.nota.includes("REVISAR")) ? `<div class="nota">${esc(f.nota)}</div>` : ""}</div></div>`;
     }
     html += `</div>`;
   }
@@ -506,6 +514,62 @@ function selTodas(r, on) {
   const ap = aplicadasDestino(S.actual);
   S.actual.fixes.filter(f => f.ramas.includes(r)).forEach(f => S.sel[r][f.id] = on && fixLista(f) && !ap.has(f.id));
   render();
+}
+// ------------------------------------------------------------ optimizar con IA
+function iaFix(f) {
+  const ia = S.actual.ia || {}, exp = (ia.explicaciones || {})[f.id], pc = f.url && (ia.paginas || {})[f.url];
+  if (!exp && !pc) return "";
+  const kw = pc ? pc.palabras_clave : null;
+  return `<div class="iafix">${exp ? `✨ ${esc(exp)}` : ""}${kw ? `<div class="kw">Palabras clave de esta página: <b>${esc(kw.principal)}</b>${(kw.secundarias || []).length ? " · " + kw.secundarias.map(esc).join(" · ") : ""}${kw.intencion ? ` <span class="sub">(${esc(kw.intencion)})</span>` : ""}</div>` : ""}</div>`;
+}
+function panelIA(r) {
+  const t = (S.iaTrabajo || {})[r];
+  if (t && t.estado === "ejecutando") {
+    const pct = t.total ? Math.round(100 * t.hecho / t.total) : 3;
+    return `<div class="card pad ia-card"><b>✨ La IA está optimizando ${r.toUpperCase()}…</b>
+      <div class="sub">${t.total ? `${t.hecho} de ${t.total} páginas` : "Descargando las páginas de tu web…"} · después se aplicarán todas las correcciones al HTML.</div>
+      <div class="progreso"><div style="width:${Math.max(pct, 3)}%"></div></div></div>`;
+  }
+  const ia = S.actual.ia || {}, ult = (ia.ejecuciones || []).filter(x => x.rama === r).slice(-1)[0];
+  return `<div class="card pad ia-card"><div style="display:flex;gap:14px;align-items:center;flex-wrap:wrap">
+    <div style="flex:1;min-width:260px"><b>✨ Optimizar con IA y generar el HTML</b>
+      <div class="sub">Con un clic: Tríada descarga cada página de tu web, la IA elige las <b>palabras clave</b> de cada una, reescribe títulos, descripciones y encabezados con ellas, <b>completa los «REVISAR»</b> con los datos que aparecen en la página (si un dato no está, lo quita en vez de inventarlo) y aplica todo. Al final descargas el HTML modificado.</div>
+      ${ult ? `<div class="ayuda">Última vez: ${fecha(ult.fecha)} · ${ult.paginas} páginas · ${ult.modelo === "simulado" ? "motor simulado (demo)" : `${esc(ult.modelo)} · coste aprox. ${pc2(ult.coste_aprox_usd)} $`}</div>` : ""}</div>
+    <button class="btn ${r}" id="ia-${r}" onclick="optimizarIA('${r}')">✨ Optimizar con IA</button></div></div>`;
+}
+function pc2(n) { return (n || 0).toFixed(2).replace(".", ","); }
+async function optimizarIA(r) {
+  const a = S.actual;
+  try {
+    const est = await api(`/api/ia/${a.id}/estimacion?rama=${r}`);
+    if (!est.paginas) return toast("No hay páginas que optimizar en esta vertiente", true);
+    if (!est.simulado && !est.clave_configurada) { toast("Añade tu clave de Claude en Ajustes para usar la IA", true); location.hash = "#/ajustes"; return; }
+    const msg = est.simulado
+      ? `Demostración: se usará un motor simulado, sin coste.\n\nSe optimizarán ${est.paginas} página(s) de ${r.toUpperCase()} y se aplicarán todas las correcciones al HTML.`
+      : `Se optimizarán ${est.paginas} página(s) de ${r.toUpperCase()} con ${est.modelo}.\n\nCoste aproximado: ${pc2(est.coste_aprox_usd)} $ (se cobra en tu cuenta de Anthropic; el coste real suele ser menor).\n\nDespués se aplicarán todas las correcciones al HTML descargado de tu web. Puedes revisarlas y cambiarlas antes de publicar.`;
+    if (!confirm(msg)) return;
+    const {trabajo} = await api(`/api/ia/${a.id}`, {body: {rama: r}});
+    S.iaTrabajo = S.iaTrabajo || {};
+    S.iaTrabajo[r] = {estado: "ejecutando", hecho: 0, total: 0};
+    S.destino = "subidos"; render();
+    for (;;) {
+      await new Promise(ok => setTimeout(ok, 1500));
+      const t = await api("/api/trabajo/" + trabajo);
+      S.iaTrabajo[r] = t;
+      if (t.estado === "error") { S.iaTrabajo[r] = null; render(); return toast(t.error, true); }
+      if (t.estado === "terminado") {
+        S.iaTrabajo[r] = null;
+        const res = t.resultado;
+        S.ultimoResultado = {rama: r, destino: "subidos", aplicados: res.aplicados, omitidos: res.omitidos,
+                             descargadas: res.descargadas, fallidas: res.fallidas, ia: res.ia};
+        (res.aplicados || []).forEach(id => delete S.sel[r][id]);
+        S.edLocales = {};
+        await abrir(a.id); render();
+        return toast(`IA: ${res.ia.paginas || 0} páginas optimizadas · ${res.aplicados.length} cambios aplicados`);
+      }
+      if (location.hash.startsWith(`#/rama/${r}/solucionar`)) render();
+    }
+  } catch (e) { if (S.iaTrabajo) S.iaTrabajo[r] = null; render(); toast(e.message, true); }
 }
 function motivosOmitidos(omitidos) {
   const c = {};
@@ -1022,11 +1086,14 @@ function vistaAjustes() {
     <input class="i" type="password" id="k-${k}" placeholder="${aj.claves[k] ? "•••••••• (déjalo vacío para mantenerla)" : "Pega aquí la clave"}" autocomplete="off"><div class="ayuda">${ayuda}</div>`;
   return cabecera("Ajustes", "Claves de API, modelos y pesos de la nota global") + `<div class="grid2" style="align-items:start">
     <div class="card pad"><h3>Claves de API</h3><p class="sub" style="margin-bottom:0">Se guardan solo en tu ordenador, en la carpeta de datos de Tríada. No se envían a ningún sitio salvo a la API correspondiente.</p>
+      ${clave("anthropic", "Claude (Anthropic) · para «Optimizar con IA»", "Se crea en console.anthropic.com → API Keys. Tiene coste por uso (con el modelo por defecto, del orden de céntimos por página).")}
       ${clave("gemini", "Gemini (Google AI Studio)", "Se crea en Google AI Studio, vinculada a tu proyecto de Google Cloud. Según Google, las búsquedas de Gemini 3 incluyen 5.000 gratis al mes; después tienen coste por búsqueda.")}
       ${clave("openai", "OpenAI (ChatGPT)", "Se crea en la plataforma de desarrolladores de OpenAI. Usa la búsqueda web de la Responses API (tiene coste por búsqueda).")}
       ${clave("perplexity", "Perplexity", "Se crea en la configuración de API de Perplexity (modelo sonar).")}
       ${clave("places", "Google Places", "Activa «Places API (New)» en tu proyecto de Google Cloud y crea una clave restringida a esa API. La nota y el número de reseñas se facturan en el nivel Enterprise de Text Search.")}
       <h3 style="margin-top:20px">Modelos</h3>
+      <label class="f">Claude (Optimizar con IA)</label><input class="i" id="m-claude" value="${esc(aj.modelos.claude || "claude-opus-5-5")}">
+      <div class="ayuda">Por defecto claude-opus-5-5. Para gastar menos puedes poner claude-sonnet-5-5.</div>
       <div class="fila">${["gemini", "openai", "perplexity"].map(k => `<div><label class="f">${NOMBRE_MOTOR[k]}</label><input class="i" id="m-${k}" value="${esc(aj.modelos[k])}"></div>`).join("")}</div>
       <div class="ayuda">Valores por defecto según la documentación oficial actual. Cámbialos si el proveedor publica uno nuevo.</div></div>
     <div class="card pad"><h3>Peso de «en la web» en la nota global</h3><p class="sub">El resto corresponde a lo de fuera de la web (señales externas y resultado real). Es un criterio de Tríada, no una cifra oficial: ajústalo a tu negocio.</p>
@@ -1037,8 +1104,8 @@ function vistaAjustes() {
 }
 async function guardarAjustes() {
   const claves = {}, modelos = {}, pesos = {};
-  for (const k of ["gemini", "openai", "perplexity", "places"]) { const v = $("#k-" + k).value.trim(); if (v) claves[k] = v; }
-  for (const k of ["gemini", "openai", "perplexity"]) modelos[k] = $("#m-" + k).value.trim();
+  for (const k of ["anthropic", "gemini", "openai", "perplexity", "places"]) { const v = $("#k-" + k).value.trim(); if (v) claves[k] = v; }
+  for (const k of ["claude", "gemini", "openai", "perplexity"]) modelos[k] = $("#m-" + k).value.trim();
   for (const r of ["sem", "geo"]) pesos[r] = +$("#p-" + r).value / 100;
   try { S.ajustes = await api("/api/ajustes", {body: {claves, modelos, pesos}}); toast("Ajustes guardados"); await refrescar(); }
   catch (e) { toast(e.message, true); }

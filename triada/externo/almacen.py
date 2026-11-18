@@ -13,7 +13,8 @@ from urllib.parse import urlparse
 _bloqueo = threading.RLock()
 
 PESOS_DEFECTO = {"sem": 0.4, "geo": 0.3}  # peso de "en la web"; el resto es "fuera de la web". SEO es solo interno
-MODELOS_DEFECTO = {"gemini": "gemini-3.8-flash", "openai": "gpt-5.5", "perplexity": "sonar"}
+MODELOS_DEFECTO = {"gemini": "gemini-3.8-flash", "openai": "gpt-5.5", "perplexity": "sonar", "claude": "claude-opus-5-5"}
+CLAVES = ("gemini", "openai", "perplexity", "places", "anthropic")
 
 
 def carpeta_datos() -> Path:
@@ -102,7 +103,7 @@ def guardar_ajustes(nuevos: dict[str, Any]) -> dict[str, Any]:
     with _bloqueo:
         a = leer_ajustes()
         for k, v in (nuevos.get("claves") or {}).items():
-            if k in ("gemini", "openai", "perplexity", "places") and v is not None:
+            if k in CLAVES and v is not None:
                 a["claves"][k] = v.strip()
         for k, v in (nuevos.get("modelos") or {}).items():
             if k in MODELOS_DEFECTO and v:
@@ -117,5 +118,5 @@ def guardar_ajustes(nuevos: dict[str, Any]) -> dict[str, Any]:
 def ajustes_publicos() -> dict[str, Any]:
     """Ajustes sin exponer las claves (solo si están configuradas)."""
     a = leer_ajustes()
-    return {"claves": {k: bool(a["claves"].get(k)) for k in ("gemini", "openai", "perplexity", "places")},
+    return {"claves": {k: bool(a["claves"].get(k)) for k in CLAVES},
             "modelos": a["modelos"], "pesos": a["pesos"]}

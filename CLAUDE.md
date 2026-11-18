@@ -1,7 +1,7 @@
 # Tríada · contexto del proyecto para Claude Code
 
 Aplicación local que audita y optimiza la web de una empresa en tres vertientes: **SEO**, **SEM** y **GEO**
-(visibilidad en buscadores con IA). Versión actual: **0.5.0**. Todo el producto (interfaz, código, comentarios
+(visibilidad en buscadores con IA). Versión actual: **0.6.0**. Todo el producto (interfaz, código, comentarios
 e identificadores) está **en español**: mantén ese idioma.
 
 Documentación de traspaso (léela al empezar a trabajar en el proyecto):
@@ -15,7 +15,7 @@ python -m venv .venv && source .venv/bin/activate      # Python ≥ 3.11 (usa to
 pip install -e ".[dev]"
 triada app                     # abre la app en http://127.0.0.1:8765 (o python -m triada.app)
 triada auditar https://web.com --combinado --config triada.toml   # modo línea de comandos
-pytest                         # 27 tests; levantan servidores locales, no necesitan internet
+pytest                         # 30 tests; levantan servidores locales, no necesitan internet
 triada conectar-claude         # registra el conector MCP en Claude Desktop (requiere pip install -e ".[claude]")
 python tests/e2e_interfaz.py   # prueba de la interfaz con Playwright (opcional: pip install playwright && playwright install chromium)
 ```
@@ -41,6 +41,11 @@ triada/
     capas.py                         nota por capas: en la web / señales externas / resultado real + cobertura
     acciones.py                      plan de acciones con estados y verificación automática
     almacen.py, servicio.py          persistencia por proyecto y ajustes (claves de API en local)
+  ia.py                            «Optimizar con IA» (Claude API, SDK anthropic): por página, palabras clave
+                                   recomendadas, valores finales de títulos/metas/H1/alt/JSON-LD con los «REVISAR»
+                                   resueltos y nuevas correcciones IA### (codigo_issue «palabras_clave»). Guarda
+                                   ediciones.json + ia.json; optimizar_y_aplicar() aplica todo al HTML descargado.
+                                   Motor simulado en la demo. Clave y modelo en Ajustes (claves.anthropic, modelos.claude)
   conector_claude.py               Conector para Claude (servidor MCP local, paquete opcional «mcp» 2.x): herramientas
                                    analizar_web, ver_problemas, ver_correcciones, editar_correccion, aplicar_correcciones,
                                    exportar_informe… La lógica no depende de mcp; las ediciones se guardan en ediciones.json
@@ -66,14 +71,20 @@ tests/                             pytest (+ servidor.py para la web de prueba)
   en el cuestionario queda «hecho» pero no verificado. Que la IA deje de citar una web no la resuelve.
 - **Datos de ejemplo y simulados siempre etiquetados** como tales. El motor simulado solo existe en el proyecto `demo`.
 - **Solo APIs oficiales** (nada de automatizar la web de ChatGPT). Nunca generar reseñas o menciones falsas.
-- **Las correcciones con «REVISAR» no se aplican** hasta que el usuario complete el dato.
+- **«REVISAR»** (cambiado a petición del usuario en 0.6): la IA los completa con datos que aparecen en la página o en
+  sus datos estructurados; si no aparecen, quita esa propiedad opcional. Nunca inventa GTIN/EAN, SKU, precios,
+  valoraciones, reseñas, teléfonos ni direcciones. Lo que propone la IA va marcado «Sugerido por IA» y es editable.
+  Sin IA, una corrección con «REVISAR» sigue sin aplicarse.
+- **Palabras clave**: las recomienda la IA a partir del contenido (y de Google Ads/Search Console si se importaron).
+  No son volúmenes de búsqueda medidos: decirlo así.
 - Las puntuaciones son un indicador interno: no prometer posiciones ni citas.
 - Los datos y las claves de API se quedan en el ordenador del usuario.
 
 ## Convenciones
 
 - Español en todo: textos, identificadores, mensajes de error. Decimales con coma en la interfaz (`pc()`, `_p()`, `_d()`).
-- Sin dependencias nuevas salvo necesidad clara (hoy: httpx, beautifulsoup4, lxml, jinja2; opcional `mcp` para Claude).
+- Sin dependencias nuevas salvo necesidad clara (hoy: httpx, beautifulsoup4, lxml, jinja2, anthropic; opcional `mcp`).
+- Cliente de Claude: inyectable en `ia.optimizar(cliente=...)`; en tests se usa un falso con `beta.messages.create`.
 - El rastreo se limita al dominio indicado (con o sin www): `urls.mismo_sitio`. Nunca analizar otras webs.
 - Las acciones POST/DELETE de la API exigen la cabecera `X-Triada: 1` (protección CSRF frente a otras webs).
 - Rutas de archivos de usuario siempre validadas (sin `..`); ver `subidas._nombre_seguro` y `aplicar.ruta_archivo`.
@@ -82,7 +93,9 @@ tests/                             pytest (+ servidor.py para la web de prueba)
 
 ## Pendiente / próximos pasos
 
-0. **Conector con Claude (0.5)**: probado con una conversación MCP real por stdio en los tests; falta probarlo en
+0. **Optimizar con IA (0.6)**: probado con un cliente falso y con el motor simulado; falta la primera prueba real
+   con la clave de Anthropic del usuario (revisar calidad de palabras clave y coste real frente a la estimación).
+   **Conector con Claude (0.5)**: probado con una conversación MCP real por stdio en los tests; falta probarlo en
    Claude Desktop en Windows/Mac del usuario. Las herramientas de «fuera de la web» aún no están en el conector.
 1. **Conector con el CMS** del usuario (aplicar cambios directamente): falta saber si su web es WordPress, Shopify,
    Webflow o código propio.

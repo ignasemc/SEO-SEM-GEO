@@ -88,6 +88,25 @@ def carpeta_analisis(aid: str) -> Path:
     return carpeta_datos() / "analisis" / aid
 
 
+def guardar_analisis(aid: str, datos: dict[str, Any]) -> None:
+    ruta = carpeta_analisis(aid) / "analisis.json"
+    tmp = ruta.with_suffix(".tmp")
+    tmp.write_text(json.dumps(datos, ensure_ascii=False, indent=2), encoding="utf-8")
+    tmp.replace(ruta)
+
+
+def leer_ediciones(aid: str) -> dict[str, str]:
+    """Valores editados de las correcciones (por el usuario, por Claude o por la IA), por id."""
+    f = carpeta_analisis(aid) / "ediciones.json"
+    return json.loads(f.read_text(encoding="utf-8")) if f.exists() else {}
+
+
+def guardar_ediciones(aid: str, nuevas: dict[str, str]) -> dict[str, str]:
+    ed = leer_ediciones(aid) | nuevas
+    (carpeta_analisis(aid) / "ediciones.json").write_text(json.dumps(ed, ensure_ascii=False, indent=2), encoding="utf-8")
+    return ed
+
+
 def listar_analisis() -> list[dict[str, Any]]:
     res = []
     for d in sorted((carpeta_datos() / "analisis").iterdir(), reverse=True):
