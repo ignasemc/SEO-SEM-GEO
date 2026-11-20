@@ -1087,6 +1087,8 @@ function vistaAjustes() {
   return cabecera("Ajustes", "Claves de API, modelos y pesos de la nota global") + `<div class="grid2" style="align-items:start">
     <div class="card pad"><h3>Claves de API</h3><p class="sub" style="margin-bottom:0">Se guardan solo en tu ordenador, en la carpeta de datos de Tríada. No se envían a ningún sitio salvo a la API correspondiente.</p>
       ${clave("anthropic", "Claude (Anthropic) · para «Optimizar con IA»", "Se crea en console.anthropic.com → API Keys. Tiene coste por uso (con el modelo por defecto, del orden de céntimos por página).")}
+      <div style="margin-top:8px"><button class="btn peq" id="probar-claude" onclick="probarClaude()">Probar conexión con Claude</button></div>
+      <div id="res-claude" class="ayuda" style="margin-top:6px"></div>
       ${clave("gemini", "Gemini (Google AI Studio)", "Se crea en Google AI Studio, vinculada a tu proyecto de Google Cloud. Según Google, las búsquedas de Gemini 3 incluyen 5.000 gratis al mes; después tienen coste por búsqueda.")}
       ${clave("openai", "OpenAI (ChatGPT)", "Se crea en la plataforma de desarrolladores de OpenAI. Usa la búsqueda web de la Responses API (tiene coste por búsqueda).")}
       ${clave("perplexity", "Perplexity", "Se crea en la configuración de API de Perplexity (modelo sonar).")}
@@ -1101,6 +1103,18 @@ function vistaAjustes() {
       ${["sem", "geo"].map(r => `<label class="f"><span class="tag t-${r}">${r.toUpperCase()}</span> En la web <b id="pv-${r}">${Math.round(aj.pesos[r] * 100)}</b> % · fuera <b id="pf-${r}">${100 - Math.round(aj.pesos[r] * 100)}</b> %</label>
         <input type="range" min="0" max="100" step="5" id="p-${r}" value="${Math.round(aj.pesos[r] * 100)}" style="width:100%" oninput="$('#pv-${r}').textContent=this.value;$('#pf-${r}').textContent=100-this.value">`).join("")}
     </div></div><div class="barra"><button class="btn pri" onclick="guardarAjustes()">Guardar ajustes</button></div>`;
+}
+async function probarClaude() {
+  const caja = $("#res-claude"), boton = $("#probar-claude");
+  const v = $("#k-anthropic").value.trim(), m = $("#m-claude").value.trim();
+  boton.disabled = true; caja.style.color = ""; caja.textContent = "Probando…";
+  try {
+    // si acabas de pegar una clave o cambiar el modelo, se guarda antes de probar
+    if (v || m) S.ajustes = await api("/api/ajustes", {body: {claves: v ? {anthropic: v} : {}, modelos: m ? {claude: m} : {}}});
+    const r = await api("/api/ia/probar", {body: {}});
+    caja.style.color = "var(--ok)"; caja.textContent = "✔ " + r.mensaje;
+  } catch (e) { caja.style.color = "var(--alta)"; caja.textContent = "✖ " + e.message; }
+  boton.disabled = false;
 }
 async function guardarAjustes() {
   const claves = {}, modelos = {}, pesos = {};

@@ -232,15 +232,94 @@ def _con_fallbacks(modelo: str) -> bool:
     return modelo.startswith(("claude-opus-5", "claude-fable-5", "claude-sonnet-5-5"))
 
 
+# modelos con los que la cuenta no admite los «fallbacks» (función beta): se sigue sin ellos
+_SIN_FALLBACKS: set[str] = set()
+
+
+def _mensaje_api(e) -> str:
+    cuerpo = getattr(e, "body", None)
+    if isinstance(cuerpo, dict) and isinstance(cuerpo.get("error"), dict):
+        return str(cuerpo["error"].get("message") or "")
+    return str(getattr(e, "message", "") or e)
+
+
+def explicar_error(e, modelo: str = "") -> str:
+    """Explica en español, para alguien que no programa, un error de la API de Claude (con el motivo original)."""
+    estado = getattr(e, "status_code", None)
+    original = _mensaje_api(e)
+    bajo = original.lower()
+    if estado == 401:
+        texto = ("Anthropic no reconoce la clave (error 401). Comprueba en Ajustes que la pegaste entera (empieza por "
+                 "«sk-ant-api»), que no la has borrado o desactivado en console.anthropic.com → API Keys, y que es una "
+                 "clave de la plataforma de desarrolladores (no sirve la suscripción de claude.ai).")
+    elif "credit" in bajo or "balance" in bajo or "billing" in bajo:
+        texto = ("Anthropic indica un problema de saldo o facturación. En console.anthropic.com → Billing comprueba que "
+                 "el saldo está disponible; tras un pago puede tardar unos minutos en activarse.")
+    elif estado == 403:
+        texto = ("Anthropic responde que la clave no tiene permiso (error 403). Causas habituales: la clave pertenece a un "
+                 "espacio de trabajo (Workspace) sin acceso a este modelo o con límite de gasto a 0, o la organización "
+                 "aún no tiene el saldo activo. Revísalo en console.anthropic.com → Settings → Workspaces y Limits, "
+                 "o prueba otro modelo en Ajustes (p. ej. claude-sonnet-5-5).")
+    elif estado == 404:
+        texto = (f"El modelo «{modelo}» no existe o tu cuenta no tiene acceso (error 404). Cambia el modelo en Ajustes, "
+                 "por ejemplo a claude-sonnet-5-5.")
+    elif estado == 429:
+        texto = ("Se ha superado el límite de peticiones de tu cuenta de Anthropic (error 429). Las cuentas nuevas tienen "
+                 "límites bajos: espera un minuto y vuelve a intentarlo, o procesa menos páginas a la vez.")
+    elif estado and estado >= 500:
+        texto = f"Los servidores de Anthropic no responden ahora mismo (error {estado}). Inténtalo de nuevo en unos minutos."
+    elif estado:
+        texto = f"La API de Claude ha rechazado la petición (error {estado})."
+    else:
+        texto = "No se pudo conectar con la API de Claude. Comprueba tu conexión a internet."
+    rid = getattr(e, "request_id", None)
+    return texto + (f" Mensaje de Anthropic: «{original}»" if original else "") + (f" (id: {rid})" if rid else "")
+
+
+def _es_rechazo_de_fallbacks(e) -> bool:
+    estado = getattr(e, "status_code", None)
+    return estado in (400, 403, 404) and (estado == 403 or any(
+        t in _mensaje_api(e).lower() for t in ("fallback", "beta", "anthropic-beta")))
+
+
+def _crear_mensaje(cliente, modelo: str, **kw):
+    """Llama a la API con fallbacks si el modelo y la cuenta los admiten; si la cuenta los rechaza, sin ellos."""
+    if _con_fallbacks(modelo) and modelo not in _SIN_FALLBACKS:
+        try:
+            return cliente.beta.messages.create(model=modelo, betas=["server-side-fallback-2026-07-01"],
+                                                fallbacks="default", **kw)
+        except Exception as e:  # noqa: BLE001 - se decide abajo
+            if not _es_rechazo_de_fallbacks(e):
+                raise
+            _SIN_FALLBACKS.add(modelo)
+    return cliente.beta.messages.create(model=modelo, **kw)
+
+
+def probar_conexion(cliente=None) -> dict[str, Any]:
+    """Petición mínima para comprobar la clave, el saldo y el acceso al modelo (cuesta una fracción de céntimo)."""
+    modelo = almacen.leer_ajustes()["modelos"].get("claude") or MODELO_DEFECTO
+    claude = _cliente_claude(cliente)
+    try:
+        r = _crear_mensaje(claude, modelo, max_tokens=512, output_config={"effort": "low"},
+                           messages=[{"role": "user", "content": "Responde solo con la palabra: ok"}])
+    except ErrorIA:
+        raise
+    except Exception as e:  # noqa: BLE001
+        if getattr(e, "status_code", None) is None and not type(e).__module__.startswith("anthropic"):
+            raise
+        raise ErrorIA(explicar_error(e, modelo)) from e
+    return {"ok": True, "modelo": getattr(r, "model", modelo), "fallbacks": modelo not in _SIN_FALLBACKS
+            and _con_fallbacks(modelo),
+            "mensaje": f"Conexión correcta con Claude ({modelo}). Ya puedes usar «Optimizar con IA»."}
+
+
 def preguntar_claude(cliente, modelo: str, sistema: str, pagina: dict[str, Any]) -> tuple[dict[str, Any], Any]:
-    extra = {"betas": ["server-side-fallback-2026-07-01"], "fallbacks": "default"} if _con_fallbacks(modelo) else {}
-    r = cliente.beta.messages.create(
-        model=modelo,
+    r = _crear_mensaje(
+        cliente, modelo,
         max_tokens=16000,
         output_config={"effort": "medium", "format": {"type": "json_schema", "schema": ESQUEMA}},
         system=[{"type": "text", "text": sistema, "cache_control": {"type": "ephemeral"}}],
         messages=[{"role": "user", "content": json.dumps(pagina, ensure_ascii=False)}],
-        **extra,
     )
     if r.stop_reason == "refusal":
         raise ErrorIA("La IA no ha podido procesar esta página.")
@@ -317,6 +396,8 @@ def optimizar(aid: str, rama: str, cliente=None, progreso: Callable[[int, int], 
     aj = almacen.leer_ajustes()
     modelo = aj["modelos"].get("claude") or MODELO_DEFECTO
     claude = None if simulado else _cliente_claude(cliente)
+    if claude is not None:
+        probar_conexion(claude)  # si la clave, el saldo o el modelo fallan, se avisa ya, con el motivo exacto
     urls = paginas_objetivo(a, rama, max_paginas or aj.get("ia_max_paginas"))
     if not urls:
         return {"paginas": 0, "mensaje": "No hay páginas que optimizar en esta vertiente."}
@@ -367,7 +448,7 @@ def optimizar(aid: str, rama: str, cliente=None, progreso: Callable[[int, int], 
         except (json.JSONDecodeError, KeyError, TypeError):
             return url, None, None, "La respuesta de la IA no se pudo leer"
         except de_api as e:
-            return url, None, None, f"Error de la API de Claude: {getattr(e, 'message', e)}"
+            return url, None, None, explicar_error(e, modelo)
         return url, res, uso, ""
 
     resultados = []
@@ -381,7 +462,7 @@ def optimizar(aid: str, rama: str, cliente=None, progreso: Callable[[int, int], 
                 if progreso:
                     progreso(i, total)
         except fatales as e:
-            raise ErrorIA("La clave de Claude no es válida o no tiene permiso. Revísala en Ajustes.") from e
+            raise ErrorIA(explicar_error(e, modelo)) from e
 
     # 2. guardar: ediciones, palabras clave y nuevas correcciones
     a = _analisis(aid)  # releer por si cambió mientras tanto

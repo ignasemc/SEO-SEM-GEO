@@ -313,6 +313,8 @@ class Handler(http.server.BaseHTTPRequestHandler):
                 if not cuerpo.get("carpeta"):
                     return self._error(400, "Indica la carpeta del sitio donde aplicar los cambios")
                 return self._json(aplicar.aplicar_en_carpeta(cuerpo["analisis"], ids, ediciones, cuerpo["carpeta"]))
+            if ruta == ["ia", "probar"]:
+                return self._json(ia.probar_conexion())
             if len(ruta) == 2 and ruta[0] == "ia":
                 rama = cuerpo.get("rama")
                 if rama not in ("seo", "sem", "geo"):
