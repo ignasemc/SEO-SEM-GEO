@@ -18,6 +18,7 @@ if errorlevel 1 goto fallo
 ".venv\Scripts\python.exe" -m pip install --upgrade pip -q
 ".venv\Scripts\python.exe" -m pip install -e ".[claude]" -q
 if errorlevel 1 goto fallo
+copy /y pyproject.toml ".venv\triada-instalado.toml" >nul
 ".venv\Scripts\python.exe" -m triada.cli conectar-claude
 pause
 exit /b 0

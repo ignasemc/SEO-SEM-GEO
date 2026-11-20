@@ -199,9 +199,33 @@ def _cliente_claude(cliente=None):
     clave = almacen.leer_ajustes()["claves"].get("anthropic")
     if not clave:
         raise ErrorIA("Falta la clave de Claude: añádela en Ajustes → Claves de API → Claude (Anthropic).")
-    import anthropic
+    anthropic = importar_anthropic()
+    return anthropic.Anthropic(api_key=clave.strip())
 
-    return anthropic.Anthropic(api_key=clave)
+
+def importar_anthropic():
+    """Importa el SDK de Claude. Si falta (instalación anterior a la 0.6), lo instala en el entorno de Tríada."""
+    try:
+        import anthropic
+
+        return anthropic
+    except ImportError:
+        pass
+    import importlib
+    import subprocess
+    import sys
+
+    r = subprocess.run([sys.executable, "-m", "pip", "install", "-q", "anthropic>=2,<3"],
+                       capture_output=True, text=True, timeout=600)
+    importlib.invalidate_caches()
+    try:
+        import anthropic
+
+        return anthropic
+    except ImportError:
+        detalle = (r.stderr or r.stdout or "").strip().splitlines()[-1:] or [""]
+        raise ErrorIA("No se pudo instalar el componente de Claude («anthropic»). Comprueba tu conexión a internet, "
+                      "cierra Tríada y vuelve a abrirla con el lanzador. " + detalle[0]) from None
 
 
 def _con_fallbacks(modelo: str) -> bool:

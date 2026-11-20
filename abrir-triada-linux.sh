@@ -18,13 +18,21 @@ if [ -z "$PY" ]; then
   exit 1
 fi
 
-if [ ! -x .venv/bin/python ]; then
+# primera vez, o Tríada actualizada (pyproject.toml distinto): se instalan los componentes
+if [ ! -x .venv/bin/python ] || ! cmp -s pyproject.toml .venv/triada-instalado.toml; then
   echo
-  echo "  Preparando Tríada por primera vez. Tarda 1 o 2 minutos…"
+  if [ -x .venv/bin/python ]; then
+    echo "  Actualizando los componentes de Tríada. Tarda 1 o 2 minutos…"
+  else
+    echo "  Preparando Tríada por primera vez. Tarda 1 o 2 minutos…"
+  fi
   echo
-  if ! "$PY" -m venv .venv || ! .venv/bin/python -m pip install --upgrade pip -q || ! .venv/bin/python -m pip install -e . -q; then
+  if { [ -x .venv/bin/python ] || "$PY" -m venv .venv; } && .venv/bin/python -m pip install --upgrade pip -q \
+     && .venv/bin/python -m pip install -e . -q; then
+    cp pyproject.toml .venv/triada-instalado.toml
+  else
     echo "  No se pudieron instalar los componentes. Comprueba tu conexión a internet y vuelve a intentarlo."
-    rm -rf .venv
+    [ -f .venv/triada-instalado.toml ] || rm -rf .venv   # solo se borra una instalación a medias
     read -r -p "  Pulsa Enter para cerrar…"
     exit 1
   fi

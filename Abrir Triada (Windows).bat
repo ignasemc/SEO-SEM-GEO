@@ -10,15 +10,31 @@ if not defined PY goto sinpython
 %PY% -c "import sys; sys.exit(0 if sys.version_info >= (3, 11) else 1)" >nul 2>nul
 if errorlevel 1 goto sinpython
 
-if exist ".venv\Scripts\python.exe" goto arrancar
+if exist ".venv\Scripts\python.exe" goto comprobar
 echo.
 echo   Preparando Triada por primera vez. Tarda 1 o 2 minutos...
 echo.
 %PY% -m venv .venv
 if errorlevel 1 goto fallo
+goto instalar
+
+:comprobar
+rem Si Triada se ha actualizado (pyproject.toml distinto), se instalan los componentes nuevos
+if not exist ".venv\triada-instalado.toml" goto actualizar
+fc /b pyproject.toml ".venv\triada-instalado.toml" >nul 2>nul
+if errorlevel 1 goto actualizar
+goto arrancar
+
+:actualizar
+echo.
+echo   Actualizando los componentes de Triada. Tarda 1 o 2 minutos...
+echo.
+
+:instalar
 ".venv\Scripts\python.exe" -m pip install --upgrade pip -q
 ".venv\Scripts\python.exe" -m pip install -e . -q
 if errorlevel 1 goto fallo
+copy /y pyproject.toml ".venv\triada-instalado.toml" >nul
 
 :arrancar
 ".venv\Scripts\python.exe" -m triada.app
@@ -40,6 +56,6 @@ exit /b 1
 echo.
 echo   No se pudieron instalar los componentes. Comprueba tu conexion a internet
 echo   y vuelve a intentarlo. Si persiste, borra la carpeta .venv y repite.
-if exist ".venv" rmdir /s /q ".venv"
+if not exist ".venv\triada-instalado.toml" if exist ".venv" rmdir /s /q ".venv"
 pause
 exit /b 1
