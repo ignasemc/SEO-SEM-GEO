@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from ..config import Config
 from ..models import SiteData
+from ..urls import clave_url
 from .base import Coleccion, agrupar_duplicados, paginas_contenido
 
 S = {"seo"}
@@ -21,17 +22,23 @@ def auditar(site: SiteData, cfg: Config, c: Coleccion) -> None:
         c.add("sitemap_falta", S, "alta", "No se encontró ningún sitemap XML.",
               "Publica /sitemap.xml con las URLs indexables, decláralo en robots.txt y envíalo en Search Console.")
     else:
-        fuera = [p.final_url for p in indexables if p.final_url not in site.urls_sitemap]
+        gen = site.generador_sitemap
+        donde = (f" Tu sitemap lo genera {gen}: haz el ajuste en {gen} (incluir o excluir tipos de contenido y "
+                 "entradas), no lo sustituyas por un archivo." if gen else "")
+        en_sitemap = {clave_url(u) for u in site.urls_sitemap}
+        # solo páginas canónicas y sin parámetros: una variante con canonical correcto nunca está «fuera del sitemap»
+        fuera = [p.final_url for p in indexables if "?" not in p.final_url and clave_url(p.final_url) not in en_sitemap]
         c.add_si(fuera, "fuera_sitemap", S, "baja", "Páginas indexables que no están en el sitemap.",
-                 "Inclúyelas en el sitemap para facilitar su descubrimiento.")
+                 "Inclúyelas en el sitemap para facilitar su descubrimiento." + donde)
+        por_clave = {clave_url(u): p for u, p in site.pages.items()}
         malas = []
         for u in site.urls_sitemap:
-            p = site.pages.get(u)
-            if p and (p.status != 200 or p.redirecciones or not p.indexable):
+            p = por_clave.get(clave_url(u))
+            if p and (p.status != 200 or p.redirecciones or not p.indexable or p.variante_de):
                 malas.append(u)
         c.add_si(malas, "sitemap_sucio", S, "media",
-                 "El sitemap contiene URLs con error, redirección o noindex.",
-                 "Deja en el sitemap solo URLs finales, con estado 200 e indexables.")
+                 "El sitemap contiene URLs con error, redirección, noindex o canonical a otra URL.",
+                 "Deja en el sitemap solo URLs finales, con estado 200, indexables y canónicas." + donde)
 
     cadenas = [p.url for p in site.pages.values() if len(p.redirecciones) > 1]
     c.add_si(cadenas, "cadena_redirecciones", S, "media", "Cadenas de varias redirecciones seguidas.",
@@ -76,9 +83,11 @@ def auditar(site: SiteData, cfg: Config, c: Coleccion) -> None:
     c.add_si([p.final_url for p in indexables if not p.lang], "lang_falta", S, "baja",
              "El HTML no declara idioma.", 'Añade <html lang="es"> (o el idioma que corresponda).')
 
-    sin_alt = [p.final_url for p in indexables if any(i.alt is None or not i.alt.strip() for i in p.imagenes)]
-    c.add_si(sin_alt, "alt_falta", S, "media", "Imágenes sin texto alternativo.",
-             "Describe cada imagen relevante en el atributo alt (las decorativas pueden llevar alt=\"\").")
+    # solo imágenes reales sin atributo alt (alt="" es una imagen decorativa y es correcto)
+    sin_alt = [p.final_url for p in indexables if any(i.falta_alt for i in p.imagenes)]
+    c.add_si(sin_alt, "alt_falta", S, "media", "Imágenes de contenido sin texto alternativo.",
+             "Describe cada imagen de contenido en su alt. Si la imagen es decorativa, alt=\"\" es lo correcto. "
+             "En WordPress se cambia una vez por imagen, en la biblioteca de medios.")
 
     escasas = [p.final_url for p in indexables if p.palabras < 250 and p.tipo not in ("contacto", "home")]
     c.add_si(escasas, "contenido_escaso", S, "media", "Páginas con menos de 250 palabras de contenido propio.",

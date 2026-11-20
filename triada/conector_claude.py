@@ -362,9 +362,10 @@ def aplicar_rama(aid: str, rama: str, ids: list[str] | None, destino: str, carpe
                "paginas_que_no_se_pudieron_descargar": r["fallidas"][:20]}
         if r["subidas"]["archivos"]:
             zip_ruta = _carpeta_exportaciones() / f"html-modificado-{base}.zip"
-            zip_ruta.write_bytes(subidas.zip_modificados(aid))
+            zip_ruta.write_bytes(subidas.zip_por_titulo(aid))
             res["archivo"] = str(zip_ruta)
-            res["nota"] = ("El .zip contiene el HTML corregido de cada página (tal como la sirve la web) y CAMBIOS.txt. "
+            res["nota"] = ("El .zip tiene un archivo por página, llamado como el título de la página, y LEEME.txt con la "
+                           "dirección de cada una y los cambios. "
                            "En WordPress o Shopify los cambios se pasan desde su editor o con el destino «paquete».")
         return res
     if destino == "paquete":

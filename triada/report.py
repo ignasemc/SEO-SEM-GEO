@@ -13,7 +13,7 @@ from jinja2 import Environment, PackageLoader, select_autoescape
 
 from . import __version__
 from .audits import puntuaciones
-from .audits.base import paginas_contenido
+from .audits.base import paginas_contenido, variantes
 from .audits.geo import BOTS_BUSQUEDA, BOTS_ENTRENAMIENTO, estado_bots
 from .config import Config
 from .models import RAMAS, Fix, Issue, SiteData
@@ -57,6 +57,10 @@ def construir_datos(site: SiteData, issues: list[Issue], fixes: list[Fix], ramas
         "bots": estado_bots(site),
         "uso_bots": {b: _uso_bot(b) for b in estado_bots(site)},
         "errores": site.errores_rastreo,
+        # URLs con canonical a otra (p. ej. ?per_page=): se informan, no cuentan como páginas ni como problemas
+        "variantes": [{"url": p.final_url, "canonical": p.variante_de, "paginacion": p.es_paginacion}
+                      for p in variantes(site)],
+        "generador_sitemap": site.generador_sitemap,
         "config": asdict(cfg) if cfg else None,
         "version": __version__,
     }

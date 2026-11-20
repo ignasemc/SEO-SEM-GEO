@@ -223,6 +223,10 @@ class Handler(http.server.BaseHTTPRequestHandler):
                 if len(ruta) == 2:
                     return self._json(subidas.estado(aid))
                 if ruta[2:] == ["descargar"]:
+                    if q.get("por") == "titulo":
+                        a = servicio.leer_analisis(aid) or {"host": "web"}
+                        return self._bytes(subidas.zip_por_titulo(aid), "application/zip",
+                                           f"html-modificado-{a['host'].replace(':', '_')}-{aid[:15]}.zip")
                     return self._bytes(subidas.zip_modificados(aid), "application/zip", f"html-modificado-{aid[:15]}.zip")
                 if ruta[2:] == ["archivo"]:
                     datos, nombre = subidas.archivo(aid, q.get("nombre", ""))

@@ -57,7 +57,7 @@ def main() -> int:
         pg.click("button:has-text('Solucionar automáticamente')")
         pg.wait_for_selector(".banner.ok", timeout=10000)
         with pg.expect_download() as d:
-            pg.locator(".exportar a:has-text('Archivos subidos')").click()
+            pg.locator(".exportar a:has-text('Con carpetas')").click()
         assert "silla.html" in zipfile.ZipFile(d.value.path()).namelist()
         pg.screenshot(path=str(CAPTURAS / "2-subidos.png"), full_page=True)
 

@@ -15,7 +15,7 @@ python -m venv .venv && source .venv/bin/activate      # Python ≥ 3.11 (usa to
 pip install -e ".[dev]"
 triada app                     # abre la app en http://127.0.0.1:8765 (o python -m triada.app)
 triada auditar https://web.com --combinado --config triada.toml   # modo línea de comandos
-pytest                         # 36 tests; levantan servidores locales, no necesitan internet
+pytest                         # 51 tests; levantan servidores locales, no necesitan internet
 triada conectar-claude         # registra el conector MCP en Claude Desktop (requiere pip install -e ".[claude]")
 python tests/e2e_interfaz.py   # prueba de la interfaz con Playwright (opcional: pip install playwright && playwright install chromium)
 ```
@@ -27,7 +27,11 @@ Lanzadores de doble clic: `Abrir Triada (Windows).bat` (CRLF), `Abrir Triada (Ma
 
 ```
 triada/
-  crawler.py, parser.py, urls.py   Rastreo asíncrono (httpx), robots.txt, sitemaps, extracción de señales
+  crawler.py, parser.py, urls.py   Rastreo asíncrono (httpx), robots.txt con comodines (urls.ReglasRobots), sitemaps
+                                   (solo <url><loc>, no <image:loc>; detecta el generador: Yoast, Rank Math…),
+                                   variantes con parámetros al final y como mucho 2 por ruta; `transport` inyectable
+  imagenes.py                      Imagen real (carga diferida), píxeles y <noscript> fuera, decorativa vs contenido,
+                                   alt fiable (nombre del producto, pie de foto) y validación; agrupado por imagen
   audits/                          Reglas: comun.py (multi-rama), seo.py, sem.py, geo.py; __init__.py orquesta
                                    y resuelve conflictos en modo combinado (landings solo-anuncios → noindex)
   fixes.py                         Correcciones deterministas (títulos, metas, JSON-LD, robots, sitemap, Consent Mode)
@@ -86,6 +90,12 @@ tests/                             pytest (+ servidor.py para la web de prueba)
 - Sin dependencias nuevas salvo necesidad clara (hoy: httpx, beautifulsoup4, lxml, jinja2, anthropic; opcional `mcp`).
 - Cliente de Claude: inyectable en `ia.optimizar(cliente=...)`; en tests se usa un falso con `beta.messages.create`.
 - El rastreo se limita al dominio indicado (con o sin www): `urls.mismo_sitio`. Nunca analizar otras webs.
+- Páginas = canónicas (`audits.base.paginas_contenido`): una URL con canonical a otra o de paginación es una variante
+  (`variantes()`), se informa y no cuenta. Comparar URLs con `urls.clave_url` (codificación, barra final).
+- Nunca generar alt a partir del nombre de archivo; alt="" en imagen decorativa es correcto. Sin fuente fiable → «REVISAR».
+- No sustituir el sitemap si lo genera un plugin (`site.generador_sitemap`): recomendar el ajuste en el plugin.
+- Fixture real: `tests/fixtures/petground-2026-11-20.jsonl.gz` (grabado con `tests/grabacion.py`, solo lectura) y
+  `tests/test_petground.py` (regresión del brief). `python tests/fixture_petground.py` da el resumen del análisis.
 - Las acciones POST/DELETE de la API exigen la cabecera `X-Triada: 1` (protección CSRF frente a otras webs).
 - Rutas de archivos de usuario siempre validadas (sin `..`); ver `subidas._nombre_seguro` y `aplicar.ruta_archivo`.
 - Clientes de API externos: aceptar `httpx.Client` inyectable y probarlos con `httpx.MockTransport`.

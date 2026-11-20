@@ -16,7 +16,8 @@ from xml.sax.saxutils import escape
 from .audits.base import paginas_contenido
 from .audits.geo import BOTS_BUSQUEDA, BOTS_ENTRENAMIENTO, estado_bots
 from .config import Config
-from .models import Fix, Issue, Page, SiteData
+from .imagenes import alt_valido, clave_imagen
+from .models import Fix, Imagen, Issue, Page, SiteData
 from .urls import path_de
 
 REVISAR = "«REVISAR»"
@@ -60,13 +61,6 @@ def proponer_descripcion(p: Page, cfg: Config) -> str:
 def _desde_url(url: str) -> str:
     nombre = PurePosixPath(unquote(urlparse(url).path)).stem or "Inicio"
     return re.sub(r"[-_]+", " ", nombre).strip().capitalize()
-
-
-def _alt_desde_src(src: str) -> str:
-    nombre = PurePosixPath(unquote(urlparse(src).path)).stem
-    nombre = re.sub(r"[-_]+|\d{3,}|\b(img|image|foto|dsc|copy|final|web)\b", " ", nombre, flags=re.I)
-    nombre = " ".join(nombre.split())
-    return nombre.capitalize() if nombre else REVISAR
 
 
 def jsonld_organizacion(site: SiteData, cfg: Config) -> dict:
@@ -194,10 +188,20 @@ def robots_propuesto(site: SiteData) -> str:
     return "\n\n".join(salida) + "\n\n" + "\n".join(sueltas) + "\n"
 
 
-def sitemap_propuesto(site: SiteData, excluir: set[str] | None = None) -> str:
+def urls_para_sitemap(site: SiteData, excluir: set[str] | None = None) -> list[Page]:
+    """Una URL entra en el sitemap solo si responde 200, es indexable, es su propia canonical y no lleva parámetros."""
     excluir = excluir or set()
-    urls = sorted({p.final_url for p in paginas_contenido(site) if p.indexable and p.final_url not in excluir})
-    cuerpo = "\n".join(f"  <url><loc>{escape(u)}</loc></url>" for u in urls)
+    return sorted((p for p in paginas_contenido(site)
+                   if p.indexable and not p.variante_de and "?" not in p.final_url and p.final_url not in excluir),
+                  key=lambda p: p.final_url)
+
+
+def sitemap_propuesto(site: SiteData, excluir: set[str] | None = None) -> str:
+    filas = []
+    for p in urls_para_sitemap(site, excluir):
+        lastmod = f"<lastmod>{escape(p.fecha_modificacion[:25])}</lastmod>" if p.fecha_modificacion else ""
+        filas.append(f"  <url><loc>{escape(p.final_url)}</loc>{lastmod}</url>")
+    cuerpo = "\n".join(filas)
     return ('<?xml version="1.0" encoding="UTF-8"?>\n'
             '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n' + cuerpo + "\n</urlset>\n")
 
@@ -256,11 +260,25 @@ def generar(issues: list[Issue], site: SiteData, cfg: Config) -> tuple[list[Fix]
             for p in paginas:
                 add(Fix(cod, p.final_url, "lang", None, '<html lang="es">', nota="Ajusta si el idioma no es español."))
         elif cod == "alt_falta":
+            # una corrección por imagen (no por página): en WordPress se cambia en la biblioteca de medios
+            por_imagen: dict[str, tuple[Imagen, list[str]]] = {}
             for p in paginas:
                 for img in p.imagenes:
-                    if img.alt is None or not img.alt.strip():
-                        add(Fix(cod, p.final_url, f"alt:{img.src}", img.alt, _alt_desde_src(img.src),
-                                nota="Deducido del nombre del archivo: describe lo que muestra la imagen."))
+                    if img.falta_alt:
+                        k = clave_imagen(img.src)
+                        if k in por_imagen:
+                            por_imagen[k][1].append(p.final_url)
+                        else:
+                            por_imagen[k] = (img, [p.final_url])
+            for img, urls in por_imagen.values():
+                fiable = img.propuesta if alt_valido(img.propuesta) else None
+                nota = ("Tomado del nombre del producto o del pie de foto. " if fiable else
+                        "No hay una descripción fiable de esta imagen: escríbela tú (o usa «Optimizar con IA»). "
+                        "Si es decorativa, déjala vacía (alt=\"\"). ")
+                nota += f"Aparece en {len(urls)} página(s)." + (f" Adjunto de WordPress n.º {img.adjunto}: cámbialo "
+                                                                "una vez en la biblioteca de medios." if img.adjunto else "")
+                add(Fix(cod, urls[0], f"alt:{img.src}", img.alt, fiable or REVISAR, nota=nota, paginas=urls[1:],
+                        objeto={"tipo": "attachment", "id": img.adjunto} if img.adjunto else None))
         elif cod in ("schema_producto",):
             for p in paginas:
                 nombre = f"jsonld/producto-{_slug(p.final_url)}.json"
@@ -284,10 +302,14 @@ def generar(issues: list[Issue], site: SiteData, cfg: Config) -> tuple[list[Fix]
             add(Fix(cod, site.url_base + "/robots.txt", "archivo", site.robots_txt, contenido, archivo="robots.txt",
                     nota="Revisa antes de publicar. Los bots de entrenamiento se dejan como estén (decisión tuya)."))
         elif cod in ("sitemap_falta", "sitemap_sucio", "fuera_sitemap", "landing_ads_indexable"):
-            contenido = sitemap_propuesto(site, excluir)
-            archivos["sitemap.xml"] = contenido
-            add(Fix(cod, site.url_base + "/sitemap.xml", "archivo", None, contenido, archivo="sitemap.xml",
-                    requiere_revision=False, nota="Solo URLs indexables con estado 200."))
+            # Si la web ya tiene un generador (Yoast, Rank Math, WordPress…), no se sustituye su sitemap:
+            # se recomienda ajustarlo ahí (va en la recomendación del problema).
+            if not site.generador_sitemap:
+                contenido = sitemap_propuesto(site, excluir)
+                archivos["sitemap.xml"] = contenido
+                add(Fix(cod, site.url_base + "/sitemap.xml", "archivo", None, contenido, archivo="sitemap.xml",
+                        requiere_revision=False,
+                        nota="Solo URLs que responden 200, indexables, canónicas y sin parámetros."))
             if cod == "landing_ads_indexable":
                 for p in paginas:
                     add(Fix(cod, p.final_url, "meta_robots", p.meta_robots or None,

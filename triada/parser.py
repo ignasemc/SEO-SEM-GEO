@@ -8,6 +8,7 @@ from urllib.parse import urljoin, urlparse
 
 from bs4 import BeautifulSoup
 
+from . import imagenes
 from .models import Imagen, Page
 from .urls import mismo_sitio, normalizar
 
@@ -97,10 +98,26 @@ def parsear(page: Page, html: str, host: str) -> Page:
     page.ctas = list(dict.fromkeys(page.ctas))
     page.tiene_formulario = soup.find("form") is not None
 
-    # --- imágenes
+    # --- imágenes (ver imagenes.py: carga diferida, <noscript>, píxeles, alt fiables)
+    tipo_provisional = clasificar(page, host)
+    vistas: set[str] = set()
     for img in soup.find_all("img"):
-        src = img.get("src") or img.get("data-src") or ""
-        page.imagenes.append(Imagen(src=urljoin(base, src) if src else "", alt=img.get("alt")))
+        if img.find_parent("noscript") is not None:
+            continue  # copia para navegadores sin JavaScript de una imagen que ya se evalúa
+        src = imagenes.src_real(img, base)
+        if not src or imagenes.es_seguimiento(img, src):
+            continue
+        clave = imagenes.clave_imagen(src)
+        if clave in vistas:
+            continue
+        vistas.add(clave)
+        alt = img.get("alt")
+        contenido = imagenes.es_contenido(img)
+        falta = alt is None or (contenido and not alt.strip())
+        page.imagenes.append(Imagen(
+            src=src, alt=alt, adjunto=imagenes.adjunto(img), contenido=contenido,
+            propuesta=imagenes.alt_fiable(img, src, page.h1[0] if page.h1 else None, tipo_provisional)
+            if falta else None))
 
     # --- autor y fecha en el HTML
     if not page.autor:

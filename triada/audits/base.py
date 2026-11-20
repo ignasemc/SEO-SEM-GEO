@@ -7,13 +7,26 @@ from collections import defaultdict
 from ..models import Issue, Page, SiteData
 
 
-def paginas_contenido(site: SiteData) -> list[Page]:
-    """Páginas HTML 200 únicas por URL final (descarta duplicados por redirección)."""
+def _html_ok(site: SiteData) -> list[Page]:
+    """Páginas HTML 200 del sitio, únicas por URL final (descarta duplicados por redirección o codificación)."""
+    from ..urls import clave_url
+
     vistas: dict[str, Page] = {}
     for p in site.pages.values():
-        if p.status == 200 and "html" in p.content_type and not p.fuera_del_sitio and p.final_url not in vistas:
-            vistas[p.final_url] = p
+        if p.status == 200 and "html" in p.content_type and not p.fuera_del_sitio:
+            vistas.setdefault(clave_url(p.final_url), p)
     return list(vistas.values())
+
+
+def paginas_contenido(site: SiteData) -> list[Page]:
+    """Páginas que cuentan como páginas: las canónicas. Una URL con canonical a otra (?per_page=, ?shop_view=…)
+    es una variante de esa otra y no se analiza aparte."""
+    return [p for p in _html_ok(site) if not p.variante_de and not p.es_paginacion]
+
+
+def variantes(site: SiteData) -> list[Page]:
+    """URLs que declaran como canonical otra URL, o páginas 2, 3… de un listado (se informan, no son problemas)."""
+    return [p for p in _html_ok(site) if p.variante_de or p.es_paginacion]
 
 
 def agrupar_duplicados(paginas: list[Page], clave) -> dict[str, list[str]]:

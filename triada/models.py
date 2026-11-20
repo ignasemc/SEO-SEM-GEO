@@ -12,8 +12,16 @@ SEVERIDAD_PESO = {"critica": 15.0, "alta": 8.0, "media": 4.0, "baja": 1.5}
 
 @dataclass
 class Imagen:
-    src: str
-    alt: str | None
+    src: str                      # imagen real (resuelta la carga diferida)
+    alt: str | None               # None = sin atributo alt; "" = decorativa (correcto)
+    adjunto: int | None = None    # id del adjunto de WordPress (wp-image-123), si se conoce
+    propuesta: str | None = None  # texto alternativo de una fuente fiable (producto, pie de foto…), si lo hay
+    contenido: bool = False       # imagen de contenido (foto de producto, de un artículo); si no, decorativa
+
+    @property
+    def falta_alt(self) -> bool:
+        """Sin atributo alt, o alt vacío en una imagen de contenido. alt="" en una decorativa es correcto."""
+        return self.alt is None or (self.contenido and not self.alt.strip())
 
 
 @dataclass
@@ -61,6 +69,22 @@ class Page:
     def indexable(self) -> bool:
         robots = f"{self.meta_robots} {self.x_robots}".lower()
         return self.status == 200 and "noindex" not in robots
+
+    @property
+    def variante_de(self) -> str | None:
+        """Si la página declara como canonical otra URL, esa URL (la página es una variante, no una página propia)."""
+        from .urls import clave_url
+
+        if self.canonical and clave_url(self.canonical) != clave_url(self.final_url):
+            return self.canonical
+        return None
+
+    @property
+    def es_paginacion(self) -> bool:
+        """Página 2, 3… de un listado (/page/2/, ?paged=2, ?product-page=2): forma parte de su listado."""
+        import re
+
+        return bool(re.search(r"/page/\d+/?$|[?&](paged|product-page|page)=\d+", self.final_url))
 
     def tipos_schema(self) -> set[str]:
         tipos: set[str] = set()
@@ -110,6 +134,7 @@ class SiteData:
     urls_sitemap: set[str] = field(default_factory=set)
     enlaces_entrantes: dict[str, int] = field(default_factory=dict)
     errores_rastreo: list[str] = field(default_factory=list)
+    generador_sitemap: str | None = None  # Yoast SEO, Rank Math, WordPress…: el sitemap se ajusta ahí
 
     def html_pages(self) -> list[Page]:
         return [p for p in self.pages.values() if "html" in p.content_type]
@@ -159,6 +184,8 @@ class Fix:
     archivo: str | None = None  # nombre de archivo generado, si aplica
     id: str = ""
     ramas: list[str] = field(default_factory=list)
+    paginas: list[str] = field(default_factory=list)   # otras páginas donde se aplica el mismo cambio
+    objeto: dict[str, Any] | None = None                # objeto del CMS, p. ej. {"tipo": "attachment", "id": 123}
 
     def to_dict(self) -> dict[str, Any]:
         return asdict(self)

@@ -64,7 +64,9 @@ def test_conversacion_completa(tmp_path):
             ap = _datos(await c.call_tool("aplicar_correcciones", {"analisis": aid, "rama": "seo"}))
             assert ap["aplicados"] >= 10 and ap["paginas_descargadas_de_la_web"] >= 5
             z = zipfile.ZipFile(ap["archivo"])
-            assert "index.html" in z.namelist() and f["id"] in z.read("CAMBIOS.txt").decode()
+            # un archivo por página, llamado como su título (sin caracteres prohibidos en Windows)
+            assert "Reformas Norte - Reformas integrales en Madrid.html" in z.namelist()
+            assert f["id"] in z.read("LEEME.txt").decode()
 
             # lo aplicado ya no sale como pendiente; GEO tiene su propia selección
             pend = _datos(await c.call_tool("ver_correcciones", {"analisis": aid, "rama": "seo", "estado": "listas"}))

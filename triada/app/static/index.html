@@ -384,13 +384,23 @@ function vistaRama(r, tab) {
   return html + (tab === "solucionar" ? vistaSolucionar(r) : tab === "fuera" ? vistaFuera(r) : vistaAnalisis(r));
 }
 
+function infoRastreo(a) {
+  const vs = a.variantes || [], pag = vs.filter(v => v.paginacion).length, can = vs.length - pag;
+  if (!vs.length && !a.generador_sitemap) return "";
+  return `<div class="card pad" style="margin-bottom:14px;font-size:13.5px">ℹ️ <b>${a.total_paginas} páginas</b> analizadas (solo las canónicas).
+    ${can ? ` ${can} URL(s) con parámetros (?per_page=, ?shop_view=…) tienen canonical correcto a su página y no se cuentan aparte.` : ""}
+    ${pag ? ` ${pag} página(s) de paginación (/page/2/…) se tratan como parte de su listado.` : ""}
+    ${a.generador_sitemap ? ` Tu sitemap lo genera <b>${esc(a.generador_sitemap)}</b>: los ajustes del sitemap se hacen ahí, Tríada no lo sustituye.` : ""}
+    ${vs.length ? `<details style="margin-top:6px"><summary>Ver las ${vs.length} variantes</summary><div class="tabla" style="max-height:240px"><table><tr><th>URL</th><th>Canonical</th></tr>${vs.map(v => `<tr><td class="url">${esc(ruta(v.url))}</td><td class="url">${v.paginacion ? "paginación" : esc(ruta(v.canonical || ""))}</td></tr>`).join("")}</table></div></details>` : ""}</div>`;
+}
 function vistaAnalisis(r) {
   const a = S.actual;
   const todos = a.issues.filter(i => i.ramas.includes(r));
   const lista = S.sev === "todas" ? todos : todos.filter(i => i.severidad === S.sev);
   const fixPorCodigo = {};
   a.fixes.filter(f => f.ramas.includes(r)).forEach(f => fixPorCodigo[f.codigo_issue] = (fixPorCodigo[f.codigo_issue] || 0) + 1);
-  let html = `<div class="chips">${["todas", ...SEVS].map(s => {
+  let html = r === "seo" ? infoRastreo(a) : "";
+  html += `<div class="chips">${["todas", ...SEVS].map(s => {
       const n = s === "todas" ? todos.length : todos.filter(i => i.severidad === s).length;
       return `<button class="chip ${S.sev === s ? "on" : ""}" onclick="S.sev='${s}';render()">${s === "todas" ? "Todas" : s[0].toUpperCase() + s.slice(1)} · ${n}</button>`;
     }).join("")}</div>`;
@@ -478,7 +488,7 @@ function vistaSolucionar(r) {
         <details><summary>Ver omitidos uno a uno</summary><ul>${res.omitidos.map(o => `<li>${esc(o.id)}: ${esc(o.motivo)}</li>`).join("")}</ul></details>` : ""}
       ${(res.fallidas || []).length ? `<details><summary>${res.fallidas.length} página(s) no se pudieron descargar</summary><ul>${res.fallidas.map(x => `<li>${esc(ruta(x.url))}: ${esc(x.motivo)}</li>`).join("")}</ul></details>` : ""}</div>
       <span style="flex:1"></span>${!res.aplicados.length ? "" : res.destino === "subidos"
-        ? `<a class="btn pri" href="/api/subidas/${a.id}/descargar">⇩ Descargar HTML modificado</a>`
+        ? `<a class="btn pri" href="/api/subidas/${a.id}/descargar?por=titulo" title="Un archivo por página, llamado como la página">⇩ Descargar HTML modificado</a>`
         : `<button class="btn pri" onclick="reanalizar()">↻ Volver a analizar y ver la mejora</button>`}</div>`;
   }
   if (!fx.length) html += `<div class="card pad">No hay correcciones automáticas para esta vertiente. Revisa las recomendaciones en la pestaña Análisis.</div>`;
@@ -565,6 +575,8 @@ async function optimizarIA(r) {
         (res.aplicados || []).forEach(id => delete S.sel[r][id]);
         S.edLocales = {};
         await abrir(a.id); render();
+        // descarga automática del HTML modificado, un archivo por página con su título
+        if ((res.aplicados || []).length) location.href = `/api/subidas/${a.id}/descargar?por=titulo`;
         return toast(`IA: ${res.ia.paginas || 0} páginas optimizadas · ${res.aplicados.length} cambios aplicados`);
       }
       if (location.hash.startsWith(`#/rama/${r}/solucionar`)) render();
@@ -661,7 +673,8 @@ function panelExportar(r) {
       <a class="btn peq" href="/api/exportar/${a.id}/csv?rama=${r}">Excel (CSV)</a>
       <a class="btn peq" href="/api/exportar/${a.id}/json?rama=${r}">JSON</a></div></div>
     <div><b>Exportar HTML modificado</b><div class="botones">
-      ${sb.modificados ? `<a class="btn peq pri" href="/api/subidas/${a.id}/descargar">⇩ Archivos subidos (.zip)</a>` : ""}
+      ${sb.modificados ? `<a class="btn peq pri" href="/api/subidas/${a.id}/descargar?por=titulo" title="Un archivo por página, llamado como el título de la página">⇩ Por página (.zip)</a>
+        <a class="btn peq" href="/api/subidas/${a.id}/descargar" title="Con la estructura de carpetas de la web">⇩ Con carpetas (.zip)</a>` : ""}
       ${carpeta ? `<a class="btn peq" href="/api/modificados/${a.id}">⇩ Archivos de la carpeta (.zip)</a>` : ""}
       ${!sb.modificados && !carpeta ? `<span class="sub" style="font-size:12.5px">Disponible cuando apliques correcciones a archivos subidos o a una carpeta.</span>` : ""}</div></div>
   </div></div>`;

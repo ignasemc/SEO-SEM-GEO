@@ -306,7 +306,8 @@ def aplicar(aid: str, ids: list[str], ediciones: dict[str, str], desde_web: bool
             else:
                 omitidos.append({"id": f["id"], "motivo": "Tipo de archivo no soportado"})
             continue
-        destinos = por_url.get(f.get("url") or "", [])
+        # una corrección agrupada (p. ej. el alt de una imagen que sale en 30 páginas) se aplica en todas
+        destinos = [a for u in [f.get("url") or ""] + list(f.get("paginas") or []) for a in por_url.get(u, [])]
         if not destinos:
             omitidos.append({"id": f["id"], "motivo": "Ningún archivo subido corresponde a esta página"})
             continue
@@ -317,7 +318,8 @@ def aplicar(aid: str, ids: list[str], ediciones: dict[str, str], desde_web: bool
     for nombre, lista in pendientes.items():
         ruta = base / "modificado" / nombre
         try:
-            html, hechos = aplicar_en_html(_texto(ruta.read_bytes()), lista[0]["url"], lista)
+            url_archivo = next((a["url"] for a in est["archivos"] if a["nombre"] == nombre), None) or lista[0]["url"]
+            html, hechos = aplicar_en_html(_texto(ruta.read_bytes()), url_archivo, lista)
         except ErrorAplicacion as e:
             omitidos.extend({"id": f["id"], "motivo": str(e)} for f in lista)
             continue
@@ -372,6 +374,92 @@ def archivo(aid: str, nombre: str) -> tuple[bytes, str]:
     if not seguro or seguro not in validos or not ruta.is_file():
         raise ErrorAplicacion("Archivo no encontrado")
     return ruta.read_bytes(), PurePosixPath(seguro).name
+
+
+RESERVADOS_WINDOWS = {"CON", "PRN", "AUX", "NUL", *(f"COM{i}" for i in range(1, 10)), *(f"LPT{i}" for i in range(1, 10))}
+
+
+def nombre_de_archivo(titulo: str, max_largo: int = 90) -> str:
+    """Convierte el título de una página en un nombre de archivo válido en Windows, Mac y Linux."""
+    t = re.sub(r"\s*[|/\\]\s*", " - ", titulo or "")  # «Marca | Página» → «Marca - Página»
+    t = re.sub(r'[<>:"?*\x00-\x1f]', " ", t)
+    t = re.sub(r"\s+", " ", t).strip().strip(".")
+    if len(t) > max_largo:
+        t = t[:max_largo].rsplit(" ", 1)[0].rstrip(" .-–|")
+    if not t or t.upper() in RESERVADOS_WINDOWS:
+        t = (t + " pagina").strip() if t else "pagina"
+    return t
+
+
+def _titulo_html(datos: bytes) -> str:
+    soup = BeautifulSoup(_texto(datos), "html.parser")
+    if soup.title and soup.title.get_text(strip=True):
+        return soup.title.get_text(" ", strip=True)
+    h1 = soup.find("h1")
+    return h1.get_text(" ", strip=True) if h1 else ""
+
+
+def zip_por_titulo(aid: str) -> bytes:
+    """HTML modificado con un archivo por página, llamado como la página («Título de la página.html»).
+
+    Así el cliente reconoce cada página y puede pasarle el archivo a una IA para que cambie su web. Se usa el título
+    que la página tiene ahora en la web (el que el cliente ve en su gestor de contenidos). Solo van las páginas con
+    cambios, más LEEME.txt con la relación archivo → dirección de la página → cambios.
+    """
+    est = _leer_estado(aid)
+    if not est["archivos"]:
+        raise ErrorAplicacion("No hay archivos subidos.")
+    base = _base(aid)
+    usados: set[str] = set()
+    filas = []
+    buf = io.BytesIO()
+    with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as z:
+        for a in sorted(est["archivos"], key=lambda x: x["url"] or x["nombre"]):
+            cambios = est["aplicados"].get(a["nombre"]) or []
+            if not cambios:
+                continue
+            original = base / "original" / a["nombre"]
+            modificado = base / "modificado" / a["nombre"]
+            titulo = _titulo_html(original.read_bytes()) if original.exists() else ""
+            ruta = urlparse(a["url"]).path if a["url"] else a["nombre"]
+            nombre = nombre_de_archivo(titulo or ruta.strip("/").replace("/", " - ") or "Inicio")
+            if nombre.lower() in usados:  # dos páginas con el mismo título: se añade su dirección
+                ruta_corta = ruta.strip("/").rsplit("/", 1)[-1] or "inicio"
+                nombre = nombre_de_archivo(f"{nombre} ({ruta_corta})")
+                n = 2
+                while nombre.lower() in usados:
+                    nombre = nombre_de_archivo(f"{nombre} {n}")
+                    n += 1
+            usados.add(nombre.lower())
+            z.write(modificado, f"{nombre}.html")
+            filas.append((f"{nombre}.html", a["url"] or a["nombre"], _titulo_html(modificado.read_bytes()), cambios))
+        for extra in ("robots.txt", "sitemap.xml"):
+            if extra in est["aplicados"] and (base / "modificado" / extra).exists():
+                z.write(base / "modificado" / extra, extra)
+                filas.append((extra, "(archivo de la raíz de la web)", "", est["aplicados"][extra]))
+        lineas = [
+            "HTML MODIFICADO POR TRÍADA",
+            "==========================",
+            "",
+            "Cada archivo se llama como la página de tu web a la que corresponde (su título actual).",
+            "",
+            "Cómo pasar los cambios a tu web con una IA (ChatGPT, Claude…):",
+            "  1. Abre el archivo de la página que quieras actualizar.",
+            "  2. Pídele a la IA: «Este es el HTML corregido de mi página <dirección>. Dime qué tengo que cambiar",
+            "     en mi web (título, descripción, encabezados, datos estructurados…) y cómo hacerlo en <WordPress,",
+            "     Shopify…>», y pega el contenido del archivo.",
+            "  3. Revisa los cambios antes de publicar.",
+            "",
+            "Archivo → página → título nuevo → cambios aplicados (ID de Tríada)",
+            "",
+        ]
+        for archivo, url, titulo_nuevo, cambios in filas:
+            lineas += [archivo, f"   Página: {url}"] + ([f"   Título nuevo: {titulo_nuevo}"] if titulo_nuevo else []) + \
+                      [f"   Cambios: {', '.join(cambios)}", ""]
+        if not filas:
+            lineas.append("Todavía no se ha aplicado ningún cambio.")
+        z.writestr("LEEME.txt", "\r\n".join(lineas) + "\r\n")
+    return buf.getvalue()
 
 
 def zip_modificados(aid: str) -> bytes:

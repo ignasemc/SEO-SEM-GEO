@@ -22,6 +22,7 @@ from urllib.parse import urljoin, urlparse
 from bs4 import BeautifulSoup
 
 from ..fixes import REVISAR
+from ..imagenes import clave_imagen, src_real
 from ..report import escribir_csv
 from .servicio import carpeta_analisis, carpeta_datos, leer_analisis, nuevo_id
 
@@ -119,11 +120,12 @@ def aplicar_en_html(html: str, url: str, fixes: list[dict[str, Any]]) -> tuple[s
                 continue
             destino.insert(0, h1)
         elif tipo.startswith("alt:"):
-            src_obj = tipo[4:]
+            # la misma imagen aunque use carga diferida, otro tamaño o su copia en <noscript>
+            objetivo = clave_imagen(tipo[4:])
             ok = False
             for img in soup.find_all("img"):
-                src = img.get("src") or img.get("data-src") or ""
-                if src and urljoin(url, src) == src_obj and not (img.get("alt") or "").strip():
+                src = src_real(img, url)
+                if src and clave_imagen(src) == objetivo and not (img.get("alt") or "").strip():
                     img["alt"] = valor
                     ok = True
             if not ok:
@@ -206,6 +208,7 @@ def aplicar_en_carpeta(aid: str, ids: list[str], ediciones: dict[str, str], carp
 
     sel = seleccionar(analisis, ids, ediciones)
     por_archivo: dict[Path, list[dict[str, Any]]] = {}
+    url_de: dict[Path, str] = {}
     for f in sel:
         motivo = _validar(f)
         if motivo:
@@ -224,16 +227,18 @@ def aplicar_en_carpeta(aid: str, ids: list[str], ediciones: dict[str, str], carp
         if not f.get("url"):
             omitidos.append({"id": f["id"], "motivo": "Sin página asociada"})
             continue
-        archivo = ruta_archivo(raiz, f["url"])
-        if archivo is None:
+        encontrados = [(a, u) for u in [f["url"]] + list(f.get("paginas") or []) if (a := ruta_archivo(raiz, u))]
+        if not encontrados:
             omitidos.append({"id": f["id"], "motivo": "No se encontró el archivo HTML de esta página en la carpeta"})
             continue
-        por_archivo.setdefault(archivo, []).append(f)
+        for archivo, u in encontrados:
+            por_archivo.setdefault(archivo, []).append(f)
+            url_de[archivo] = u
 
     for archivo, lista in por_archivo.items():
         respaldar(archivo)
         try:
-            html, hechos = aplicar_en_html(archivo.read_text(encoding="utf-8"), lista[0]["url"], lista)
+            html, hechos = aplicar_en_html(archivo.read_text(encoding="utf-8"), url_de[archivo], lista)
         except ErrorAplicacion as e:
             omitidos.extend({"id": f["id"], "motivo": str(e)} for f in lista)
             continue

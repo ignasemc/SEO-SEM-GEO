@@ -132,3 +132,45 @@ def test_aplicar_trayendo_el_html_desde_la_web(analisis):
     # el original descargado se conserva para poder restablecerlo
     subidas.restablecer(aid)
     assert subidas.archivo(aid, "index.html")[0] == (DEMO / "index.html").read_bytes()
+
+
+def test_zip_por_titulo_de_pagina(analisis):
+    """Tras aplicar, el .zip tiene un archivo por página llamado como su título, sin repetir nombres."""
+    import httpx
+
+    from triada.app import servicio, subidas
+
+    aid, _ = analisis
+    a = servicio.leer_analisis(aid)
+
+    def responder(peticion):
+        from urllib.parse import urlparse
+
+        ruta = urlparse(str(peticion.url)).path.strip("/")
+        archivo = DEMO / ruta / "index.html" if ruta else DEMO / "index.html"
+        return httpx.Response(200, content=archivo.read_bytes(), headers={"content-type": "text/html"}) \
+            if archivo.exists() else httpx.Response(404)
+
+    seo = [f["id"] for f in a["fixes"] if "seo" in f["ramas"] and "«REVISAR»" not in f["valor_propuesto"]]
+    subidas.aplicar(aid, seo, {}, desde_web=True, cliente=httpx.Client(transport=httpx.MockTransport(responder)))
+    z = zipfile.ZipFile(io.BytesIO(subidas.zip_por_titulo(aid)))
+    nombres = z.namelist()
+    html = [n for n in nombres if n.endswith(".html")]
+    assert "Reformas Norte - Reformas integrales en Madrid.html" in html
+    assert "Silla de roble macizo.html" in html
+    # la home y el artículo del blog tienen el mismo título: el segundo lleva su dirección
+    assert any(n.startswith("Reformas Norte - Reformas integrales en Madrid (") for n in html)
+    assert len(html) == len(set(n.lower() for n in html))
+    assert all(not set('<>:"|?*\\') & set(n) for n in nombres)
+    leeme = z.read("LEEME.txt").decode()
+    assert "/productos/silla-roble/" in leeme and "Silla de roble macizo.html" in leeme
+    # el contenido es el HTML modificado, no el original
+    assert z.read("Silla de roble macizo.html") != (DEMO / "productos/silla-roble/index.html").read_bytes()
+
+
+def test_nombre_de_archivo_valido():
+    from triada.app.subidas import nombre_de_archivo
+
+    assert nombre_de_archivo('Camas: "Premium" | Petground') == "Camas Premium - Petground"
+    assert nombre_de_archivo("CON") == "CON pagina" and nombre_de_archivo("   ") == "pagina"
+    assert len(nombre_de_archivo("palabra " * 40)) <= 90

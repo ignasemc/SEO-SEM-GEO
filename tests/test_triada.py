@@ -103,3 +103,43 @@ def test_correcciones(sitio, tmp_path):
     assert (tmp_path / "correcciones.csv").exists()
     pts = puntuaciones(issues, len(paginas_contenido(site)))
     assert all(0 <= v <= 100 for v in pts.values())
+
+
+def test_robots_con_comodines():
+    from triada.urls import ReglasRobots
+
+    r = ReglasRobots("User-agent: Baiduspider\nDisallow: /\n\nUser-agent: *\nDisallow: /*filter_category=\n"
+                     "Disallow: /wp-admin/\nAllow: /wp-admin/admin-ajax.php\nDisallow: /*.pdf$\n")
+    assert r.permite("TriadaBot", "https://x.es/tienda/")
+    assert not r.permite("TriadaBot", "https://x.es/tienda/?filter_category=3")
+    assert r.permite("TriadaBot", "https://x.es/wp-admin/admin-ajax.php")
+    assert not r.permite("TriadaBot", "https://x.es/wp-admin/opciones")
+    assert not r.permite("TriadaBot", "https://x.es/doc.pdf") and r.permite("TriadaBot", "https://x.es/doc.pdf?v=2")
+    assert not r.permite("Baiduspider", "https://x.es/")
+
+
+def test_imagenes_carga_diferida_pixeles_y_alt():
+    from bs4 import BeautifulSoup
+
+    from triada import imagenes
+
+    html = """<main>
+      <div class="product-wrapper"><a class="product-image-link" href="/p/">
+        <img src="data:image/svg+xml,%3Csvg%3E" data-lazy-src="/up/cama-300x300.jpg" alt=""></a>
+        <div class="hover-img"><img src="/up/cama-2.jpg" alt=""></div>
+        <h3 class="wd-entities-title"><a href="/p/">Cama de Césped Natural</a></h3></div>
+      <noscript><img height="1" width="1" src="https://www.facebook.com/tr?id=1&ev=PageView"></noscript>
+      <img src="/themes/x/lazy.svg" data-src="/up/foto.jpg">
+    </main><footer><img src="/up/logo_blanco_260x.png" alt=""></footer>"""
+    soup = BeautifulSoup(html, "lxml")
+    tarjeta, hover, pixel, foto, logo = soup.find_all("img")
+    base = "https://x.es/"
+    assert imagenes.src_real(tarjeta, base) == "https://x.es/up/cama-300x300.jpg"
+    assert imagenes.src_real(foto, base) == "https://x.es/up/foto.jpg"
+    assert imagenes.es_seguimiento(pixel, imagenes.src_real(pixel, base))
+    assert imagenes.es_contenido(tarjeta) and not imagenes.es_contenido(hover) and not imagenes.es_contenido(logo)
+    assert imagenes.alt_fiable(tarjeta, "", None, "home") == "Cama de Césped Natural"
+    assert imagenes.clave_imagen("https://x.es/up/cama-300x300.jpg") == imagenes.clave_imagen("https://x.es/up/cama.jpg")
+    for malo in ("Svg&gt;", "Tr", "Logo blanco x", "foto 1024x1024", "img_123.jpg", "1. petground empapdor perro pxxl x"):
+        assert not imagenes.alt_valido(malo), malo
+    assert imagenes.alt_valido("Cama de césped natural para perros")
