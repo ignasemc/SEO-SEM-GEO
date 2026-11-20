@@ -181,3 +181,13 @@ def test_errores_de_la_api_se_explican(analisis_real, clase, estado, esperado):
         ia.optimizar(analisis_real, "seo", cliente=claude)
     assert esperado in str(e.value) and mensaje in str(e.value) and "req_prueba" in str(e.value)
     ia._SIN_FALLBACKS.clear()
+
+
+def test_clave_que_no_es_de_api_se_explica(analisis_real):
+    from triada import ia
+    from triada.externo import almacen
+
+    almacen.guardar_ajustes({"claves": {"anthropic": "sk-ant-usr-1234567890"}})
+    claude = ClaudeConErrores(todas=_error_api("AuthenticationError", 401, "invalid x-api-key"))
+    with pytest.raises(ia.ErrorIA, match="«sk-ant-usr-…», y eso no es una clave de API"):
+        ia.probar_conexion(claude)

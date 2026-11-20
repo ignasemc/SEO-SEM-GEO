@@ -248,7 +248,13 @@ def explicar_error(e, modelo: str = "") -> str:
     estado = getattr(e, "status_code", None)
     original = _mensaje_api(e)
     bajo = original.lower()
-    if estado == 401:
+    clave = (almacen.leer_ajustes()["claves"].get("anthropic") or "").strip()
+    if estado == 401 and clave and not clave.startswith("sk-ant-api"):
+        prefijo = clave[:11] if clave.startswith("sk-ant-") else clave[:4]
+        texto = (f"La clave guardada empieza por «{prefijo}…», y eso no es una clave de API (error 401). Las claves de API "
+                 "de Anthropic empiezan por «sk-ant-api». Créala en console.anthropic.com → Settings → API Keys → "
+                 "«Create Key», cópiala entera en ese momento (solo se muestra una vez) y pégala en Ajustes.")
+    elif estado == 401:
         texto = ("Anthropic no reconoce la clave (error 401). Comprueba en Ajustes que la pegaste entera (empieza por "
                  "«sk-ant-api»), que no la has borrado o desactivado en console.anthropic.com → API Keys, y que es una "
                  "clave de la plataforma de desarrolladores (no sirve la suscripción de claude.ai).")

@@ -15,7 +15,7 @@ python -m venv .venv && source .venv/bin/activate      # Python ≥ 3.11 (usa to
 pip install -e ".[dev]"
 triada app                     # abre la app en http://127.0.0.1:8765 (o python -m triada.app)
 triada auditar https://web.com --combinado --config triada.toml   # modo línea de comandos
-pytest                         # 35 tests; levantan servidores locales, no necesitan internet
+pytest                         # 36 tests; levantan servidores locales, no necesitan internet
 triada conectar-claude         # registra el conector MCP en Claude Desktop (requiere pip install -e ".[claude]")
 python tests/e2e_interfaz.py   # prueba de la interfaz con Playwright (opcional: pip install playwright && playwright install chromium)
 ```
